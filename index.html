@@ -304,6 +304,7 @@ const DossierView = ({ st, sid, onTitleChange }) => {
   const k = (id) => sid + "_" + id;
   const pdfKey = k("pdf");
   const pdfNameKey = k("pdfname");
+  const { isMobile } = useViewport();
 
   const [pdf, setPdf] = useState(() => {
     try { return localStorage.getItem(pdfKey) || null; } catch { return null; }
@@ -366,7 +367,7 @@ const DossierView = ({ st, sid, onTitleChange }) => {
           <div>
             <div style={{ fontSize: 12, color: "#8898b0", marginBottom: 6 }}>{pdfName}</div>
             <object data={pdf} type="application/pdf"
-              style={{ width: "100%", height: 600, border: "1px solid #d8dde8", borderRadius: 4, background:"#fff" }}>
+              style={{ width: "100%", height: isMobile ? 400 : 600, border: "1px solid #d8dde8", borderRadius: 4, background:"#fff" }}>
               <div style={{ padding: 20, textAlign: "center", color: "#8898b0" }}>
                 Impossible d'afficher le PDF. <a href={pdf} download={pdfName || "document.pdf"}>Télécharger</a>
               </div>
@@ -493,7 +494,7 @@ const CanvasCard = ({ card, sid, onDragStart, onResizeStart, onUpdate, onDelete,
                 background:imgSrc?"#000":"repeating-linear-gradient(45deg,#eee,#eee 2px,#f5f5f3 2px,#f5f5f3 10px)",
                 display:"flex", alignItems:"center", justifyContent:"center" }}
             >
-              {imgSrc ? <img src={imgSrc} alt="" style={{ width:"100%", height:"100%", objectFit:"cover" }} />
+              {imgSrc ? <img src={imgSrc} alt="" style={{ width:"100%", height:"100%", objectFit:"contain" }} />
                       : <div style={{ color:"#aaa", textAlign:"center", fontSize:12, userSelect:"none" }}>📷<br/>Cliquer ou glisser</div>}
               {imgSrc && <div style={{ position:"absolute", top:4, right:4, background:"rgba(0,0,0,.5)", color:"#fff", fontSize:10, padding:"2px 6px", borderRadius:2, pointerEvents:"none" }}>✎</div>}
             </div>
@@ -1026,47 +1027,57 @@ const App = () => {
 
   return (
     <div style={{
-      height: "100vh", display: "flex", flexDirection: "column",
+      height: "100vh", display: "flex",
       fontFamily: "'Plus Jakarta Sans', sans-serif", color: "#1a2332",
     }}>
-      {/* Barre supérieure */}
-      <header data-np style={{
-        height: 52, flexShrink: 0, background: "#fff",
-        borderBottom: "1px solid #e2e6ed",
-        display: "flex", alignItems: "center", padding: "0 24px", gap: 12,
-      }}>
-        <span style={{ fontSize: 16, fontWeight: 700 }}>DNL</span>
-        <div style={{ width: 1, height: 18, background: "#dde1ea" }} />
-        <span style={{ fontSize: 14, color: "#5a6880" }}>Geschichte &amp; Géographie</span>
-        <div style={{ flex: 1 }} />
-        {!isMobile && <span style={{ fontSize: 12, color: "#9aa3b0" }}>{currentIdx + 1} / {allSTs.length}</span>}
-        {!isMobile && <span style={{ fontSize: 12, color: "#8898b0", maxWidth:160, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{user?.email}</span>}
-        {isMobile && (
-          <button onClick={() => setSidebarOpen(o => !o)}
-            style={{ background:"none", border:"none", fontSize:22, cursor:"pointer", color:"#5a6880", padding:"0 4px" }}>☰</button>
-        )}
-        <button onClick={() => window.print()}
-          style={{ padding:"5px 14px", background:"#f5f6f9", color:"#5a6880", border:"1px solid #d8dde8", borderRadius:5, cursor:"pointer", fontSize:13, marginLeft:8 }}>⬇ PDF</button>
-        <button onClick={() => _sb.auth.signOut()} title="Se déconnecter"
-          style={{ padding:"5px 10px", background:"#f5f6f9", color:"#5a6880", border:"1px solid #d8dde8", borderRadius:5, cursor:"pointer", fontSize:15, marginLeft:4 }}>⏻</button>
-      </header>
+      {/* Overlay mobile (quand sidebar ouverte) */}
+      {isMobile && sidebarOpen && (
+        <div onClick={() => setSidebarOpen(false)}
+          style={{ position:"fixed", inset:0, background:"rgba(0,0,0,.45)", zIndex:50 }} />
+      )}
 
-      <div style={{ flex: 1, display: "flex", overflow: "hidden" }}>
-        {/* Overlay mobile */}
-        {isMobile && sidebarOpen && (
-          <div onClick={() => setSidebarOpen(false)}
-            style={{ position:"fixed", inset:0, background:"rgba(0,0,0,.45)", zIndex:50 }} />
-        )}
-        {/* Sidebar */}
-        <div style={isMobile ? { position:"fixed", top:0, left:0, bottom:0, zIndex:60,
-          transform: sidebarOpen ? "translateX(0)" : "translateX(-100%)",
-          transition: "transform .25s ease" } : {}}>
-          <Sidebar themes={COURS.themes} activePath={activePath}
-            onSelect={(tId, stId) => { setActivePath([tId, stId]); setSidebarOpen(false); }}
-            stTitles={stTitles} />
-        </div>
+      {/* Sidebar — pleine hauteur, masquable */}
+      <div style={
+        isMobile
+          ? { position:"fixed", top:0, left:0, bottom:0, zIndex:60,
+              transform: sidebarOpen ? "translateX(0)" : "translateX(-100%)",
+              transition: "transform .25s ease" }
+          : { width: sidebarOpen ? 240 : 0, flexShrink: 0,
+              overflow: "hidden", transition: "width .25s ease" }
+      }>
+        <Sidebar themes={COURS.themes} activePath={activePath}
+          onSelect={(tId, stId) => { setActivePath([tId, stId]); if (isMobile) setSidebarOpen(false); }}
+          stTitles={stTitles} />
+      </div>
 
-        <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
+      {/* Colonne principale */}
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", minWidth: 0 }}>
+
+        {/* Barre supérieure */}
+        <header data-np style={{
+          height: 52, flexShrink: 0, background: "#fff",
+          borderBottom: "1px solid #e2e6ed",
+          display: "flex", alignItems: "center", padding: "0 16px", gap: 10,
+        }}>
+          <button onClick={() => setSidebarOpen(o => !o)} title={sidebarOpen ? "Masquer le menu" : "Afficher le menu"}
+            style={{ background:"none", border:"none", fontSize:22, cursor:"pointer", color:"#5a6880", padding:"0 4px", flexShrink:0 }}>☰</button>
+          <span style={{ fontSize: 16, fontWeight: 700 }}>DNL</span>
+          {!isMobile && <>
+            <div style={{ width: 1, height: 18, background: "#dde1ea" }} />
+            <span style={{ fontSize: 14, color: "#5a6880" }}>Geschichte &amp; Géographie</span>
+          </>}
+          <div style={{ flex: 1 }} />
+          {!isMobile && <span style={{ fontSize: 12, color: "#9aa3b0" }}>{currentIdx + 1} / {allSTs.length}</span>}
+          {!isMobile && <span style={{ fontSize: 12, color: "#8898b0", maxWidth:160, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{user?.email}</span>}
+          <button onClick={() => window.print()}
+            style={{ padding:"5px 14px", background:"#f5f6f9", color:"#5a6880", border:"1px solid #d8dde8", borderRadius:5, cursor:"pointer", fontSize:13 }}>⬇ PDF</button>
+          <button onClick={() => _sb.auth.signOut()} title="Se déconnecter"
+            style={{ padding:"5px 10px", background:"#f5f6f9", color:"#5a6880", border:"1px solid #d8dde8", borderRadius:5, cursor:"pointer", fontSize:15 }}>⏻</button>
+        </header>
+
+        <div style={{ flex: 1, display: "flex", overflow: "hidden" }}>
+
+          <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", minWidth: 0 }}>
           {/* Fil d'Ariane + onglets */}
           <div style={{
             background: "#fff", borderBottom: "1px solid #e2e6ed",
@@ -1078,8 +1089,9 @@ const App = () => {
             <div data-np style={{ display: "flex", gap: 0 }}>
               {TABS.map((t) => (
                 <button key={t} onClick={() => setTab(t)} style={{
-                  padding: "7px 20px", background: "none", border: "none",
-                  cursor: "pointer", fontSize: 14,
+                  padding: isMobile ? "10px 18px" : "7px 20px",
+                  background: "none", border: "none",
+                  cursor: "pointer", fontSize: isMobile ? 15 : 14,
                   color: tab === t ? "#2d60a7" : "#8898b0",
                   fontWeight: tab === t ? 600 : 400,
                   borderBottom: tab === t ? "2px solid #2d60a7" : "2px solid transparent",
@@ -1142,6 +1154,7 @@ const App = () => {
               Suivant →
             </button>
           </div>
+        </div>
         </div>
       </div>
     </div>
