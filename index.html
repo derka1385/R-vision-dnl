@@ -15,21 +15,21 @@
     body { font-family: 'Plus Jakarta Sans', sans-serif; background: #f0f2f5; color: #1a2332; }
     h1, h2, h3, p { margin: 0; }
     button { font-family: inherit; }
-
+ 
     /* Editable fields */
     [contenteditable] { cursor: text; }
     [contenteditable]:hover { background: rgba(45,96,167,.05); border-radius: 2px; }
     [contenteditable]:focus { outline: 2px solid rgba(45,96,167,.25); outline-offset: 1px; border-radius: 2px; background: rgba(45,96,167,.04); }
     [contenteditable]:empty::before { content: attr(data-ph); color: #b8c0cc; font-style: italic; pointer-events: none; }
-
+ 
     /* Scrollbar */
     ::-webkit-scrollbar { width: 5px; }
     ::-webkit-scrollbar-track { background: transparent; }
     ::-webkit-scrollbar-thumb { background: #cdd2dc; border-radius: 3px; }
-
+ 
     /* Sidebar scrollbar */
     aside::-webkit-scrollbar-thumb { background: #3a4e68; }
-
+ 
     /* Print */
     @media print {
       [data-np] { display: none !important; }
@@ -41,10 +41,10 @@
 </head>
 <body>
 <div id="root"></div>
-
+ 
 <script type="text/babel">
 const { useState, useRef, useEffect } = React;
-
+ 
 // ════════════════════════════════════════════════════════════════
 //  SUPABASE — Auth & synchronisation multi-appareils
 // ════════════════════════════════════════════════════════════════
@@ -52,22 +52,37 @@ const SUPABASE_URL = "https://bfxtjqevxdrewokaemzx.supabase.co";
 const SUPABASE_KEY = "sb_publishable_F-8ef9orhZMCnTOGTfDlEg_KQc9pRyL";
 const _sb  = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 let   _uid = null;
-
+ 
+// Helper : vide les données locales de l'app (sans toucher à la session Supabase)
+const _clearLocalData = () => {
+  const toDelete = [];
+  for (let i = 0; i < localStorage.length; i++) {
+    const k = localStorage.key(i);
+    if (k && !k.startsWith("sb-") && !k.startsWith("supabase.")) toDelete.push(k);
+  }
+  toDelete.forEach(k => localStorage.removeItem(k));
+};
+ 
 // Intercepteur : chaque localStorage.setItem sync automatiquement vers Supabase
 const _origSet = localStorage.setItem.bind(localStorage);
 localStorage.setItem = (k, v) => {
   _origSet(k, v);
   if (_uid && !k.startsWith("sb-") && !k.startsWith("supabase.")) {
     const isImg = k.startsWith("img_");
+    const row = isImg
+      ? { user_id:_uid, key:k.slice(4), data:v }
+      : { user_id:_uid, key:k, value:v };
     _sb.from(isImg ? "images" : "content")
-       .upsert(isImg ? { user_id:_uid, key:k.slice(4), data:v }
-                     : { user_id:_uid, key:k, value:v })
+       .upsert(row, { onConflict: "user_id,key" })
+       .then(({ error }) => { if (error) console.warn("⚡sync:", error.message, k); })
        .catch(e => console.warn("⚡sync:", e));
   }
 };
-
+ 
 // Chargement initial depuis Supabase → localStorage
+// (vide d'abord les données locales pour éviter le mélange entre comptes)
 const loadUserData = async (uid) => {
+  _clearLocalData();
   const [{ data:rows, error:e1 }, { data:imgs, error:e2 }] = await Promise.all([
     _sb.from("content").select("key,value").eq("user_id", uid),
     _sb.from("images").select("key,data").eq("user_id", uid),
@@ -77,7 +92,7 @@ const loadUserData = async (uid) => {
   if (rows) rows.forEach(r => { try { _origSet(r.key, r.value); } catch {} });
   if (imgs) imgs.forEach(r => { try { _origSet("img_"+r.key, r.data); } catch {} });
 };
-
+ 
 // DB — lectures localStorage ; écritures interceptées ci-dessus
 const DB = {
   read:    k      => { try { return localStorage.getItem(k); }               catch { return null; } },
@@ -87,7 +102,7 @@ const DB = {
   readImg: k      => { try { return localStorage.getItem("img_"+k); }        catch { return null; } },
   writeImg:(k,v)  => { try { localStorage.setItem("img_"+k,v); }             catch {} },
 };
-
+ 
 // ── Viewport responsive ──────────────────────────────────────────
 const useViewport = () => {
   const [w, setW] = useState(window.innerWidth);
@@ -98,7 +113,7 @@ const useViewport = () => {
   }, []);
   return { isMobile: w < 768, isTablet: w >= 768 && w < 1024 };
 };
-
+ 
 // ════════════════════════════════════════════════════════════════
 //  DONNÉES DU COURS
 //  • Modifiez ici les titres, textes et questions directement
@@ -107,7 +122,7 @@ const useViewport = () => {
 //    page pour l'éditer — les modifications sont sauvegardées
 //    automatiquement dans le navigateur.
 // ════════════════════════════════════════════════════════════════
-
+ 
 function creerST(id, numero, titre) {
   return {
     id, numero, titre,
@@ -139,7 +154,7 @@ function creerST(id, numero, titre) {
     dissertation: "Sujet de la dissertation finale à renseigner.",
   };
 }
-
+ 
 const COURS = {
   titre: "DNL — Geschichte & Géographie",
   themes: [
@@ -167,7 +182,7 @@ const COURS = {
     },
   ],
 };
-
+ 
 // ── Champ de texte éditable ──────────────────────────────────────
 // Affiche `defaultVal`, lit depuis localStorage si déjà édité,
 // et sauvegarde à chaque modification.
@@ -196,13 +211,13 @@ const E = ({ defaultVal, storageKey, tag = "div", ph = "Cliquez pour éditer", s
     />
   );
 };
-
+ 
 // ── Slot image (clic ou glisser-déposer) ─────────────────────────
 const ImgSlot = ({ storageKey, height = 140 }) => {
   const [src, setSrc] = useState(() => {
     try { return localStorage.getItem("img_" + storageKey) || null; } catch { return null; }
   });
-
+ 
   const charger = (file) => {
     if (!file || !file.type.startsWith("image/")) return;
     const r = new FileReader();
@@ -212,7 +227,7 @@ const ImgSlot = ({ storageKey, height = 140 }) => {
     };
     r.readAsDataURL(file);
   };
-
+ 
   return (
     <div
       onClick={() => {
@@ -249,7 +264,7 @@ const ImgSlot = ({ storageKey, height = 140 }) => {
     </div>
   );
 };
-
+ 
 // ── Badge numéro de document ─────────────────────────────────────
 const NumDoc = ({ n, color }) => (
   <span style={{
@@ -259,15 +274,15 @@ const NumDoc = ({ n, color }) => (
     fontSize: 12, fontWeight: 700, marginRight: 7,
   }}>{n}</span>
 );
-
+ 
 // ── Vue Dossier (fiche sous-thème) ───────────────────────────────
 const DossierView = ({ st, sid, onTitleChange }) => {
   const k = (id) => sid + "_" + id;
   const { isMobile } = useViewport();
-
+ 
   return (
     <div style={{ display: "flex", flexDirection: "column" }}>
-
+ 
       {/* ① En-tête : intro + chronologie */}
       <div style={{
         display: "flex", flexDirection: isMobile ? "column" : "row",
@@ -284,7 +299,7 @@ const DossierView = ({ st, sid, onTitleChange }) => {
         }}>
           Dossier {st.numero.split(".")[0]}
         </div>
-
+ 
         {/* Titre + intro 2 colonnes */}
         <div style={{ flex: 2 }}>
           <E
@@ -299,7 +314,7 @@ const DossierView = ({ st, sid, onTitleChange }) => {
             style={{ fontSize: 13.5, lineHeight: 1.7, color: "#3a4558" }}
           />
         </div>
-
+ 
         {/* Chronologie */}
         <div style={{
           flex: 1, minWidth: 160,
@@ -322,7 +337,7 @@ const DossierView = ({ st, sid, onTitleChange }) => {
           ))}
         </div>
       </div>
-
+ 
       {/* ② Leitfrage */}
       <div style={{
         padding: "10px 26px", borderBottom: "1px solid #e2e6ed",
@@ -334,13 +349,13 @@ const DossierView = ({ st, sid, onTitleChange }) => {
           style={{ fontSize: 15, fontWeight: 600, color: "#c96a2a" }}
         />
       </div>
-
+ 
       {/* ③ Documents */}
       <div style={{ padding: "20px 26px", background: "#f5f6f9", display: "flex", flexDirection: "column", gap: 18 }}>
-
+ 
         {/* Rangée 1 : Doc 1 (img) + Doc 2 (txt) + Doc 3 (img) */}
         <div style={{ display: "flex", flexDirection: isMobile ? "column" : "row", gap: 18, alignItems: "flex-start" }}>
-
+ 
           {/* Doc 1 */}
           <div style={{ flex: 2.2, display: "flex", flexDirection: "column", gap: 6 }}>
             <div style={{ display: "flex", alignItems: "center" }}>
@@ -352,7 +367,7 @@ const DossierView = ({ st, sid, onTitleChange }) => {
             <E defaultVal={st.docs[0].source} storageKey={k("d1src")} tag="span"
                ph="Source..." style={{ fontSize: 11, color: "#8898b0" }} />
           </div>
-
+ 
           {/* Doc 2 */}
           <div style={{ flex: 2, display: "flex", flexDirection: "column", gap: 6 }}>
             <div style={{ display: "flex", alignItems: "center" }}>
@@ -371,7 +386,7 @@ const DossierView = ({ st, sid, onTitleChange }) => {
             <E defaultVal={st.docs[1].source} storageKey={k("d2src")} tag="span"
                ph="Source..." style={{ fontSize: 11, color: "#8898b0" }} />
           </div>
-
+ 
           {/* Doc 3 */}
           <div style={{ flex: 1.5, display: "flex", flexDirection: "column", gap: 6 }}>
             <div style={{ display: "flex", alignItems: "center" }}>
@@ -384,10 +399,10 @@ const DossierView = ({ st, sid, onTitleChange }) => {
                ph="Source..." style={{ fontSize: 11, color: "#8898b0" }} />
           </div>
         </div>
-
+ 
         {/* Rangée 2 : Doc 4 (txt) + Doc 5 (img) + Questions */}
         <div style={{ display: "flex", flexDirection: isMobile ? "column" : "row", gap: 18, alignItems: "flex-start" }}>
-
+ 
           {/* Doc 4 */}
           <div style={{ flex: 2.2, display: "flex", flexDirection: "column", gap: 6 }}>
             <div style={{ display: "flex", alignItems: "center" }}>
@@ -406,7 +421,7 @@ const DossierView = ({ st, sid, onTitleChange }) => {
             <E defaultVal={st.docs[3].source} storageKey={k("d4src")} tag="span"
                ph="Source..." style={{ fontSize: 11, color: "#8898b0" }} />
           </div>
-
+ 
           {/* Doc 5 */}
           <div style={{ flex: 2.8, display: "flex", flexDirection: "column", gap: 6 }}>
             <div style={{ display: "flex", alignItems: "center" }}>
@@ -418,7 +433,7 @@ const DossierView = ({ st, sid, onTitleChange }) => {
             <E defaultVal={st.docs[4].source} storageKey={k("d5src")} tag="span"
                ph="Source..." style={{ fontSize: 11, color: "#8898b0" }} />
           </div>
-
+ 
           {/* Panneau Questions */}
           <div style={{ flex: 1.5 }}>
             <div style={{
@@ -452,14 +467,14 @@ const DossierView = ({ st, sid, onTitleChange }) => {
           </div>
         </div>
       </div>
-
+ 
       {/* ④ Dissertation finale */}
       <div style={{ padding: "20px 26px", borderTop: "2px solid #e2e6ed", background: "#fff" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 14 }}>
           <span style={{ fontSize: 15, fontWeight: 700 }}>✍ Dissertation finale</span>
           <div style={{ flex: 1, height: 1, background: "#e2e6ed" }} />
         </div>
-
+ 
         <div style={{
           background: "#f5f6f9", border: "1px dashed #c4c9d4",
           borderRadius: 4, padding: "10px 14px", marginBottom: 16,
@@ -469,7 +484,7 @@ const DossierView = ({ st, sid, onTitleChange }) => {
           <E defaultVal={st.dissertation} storageKey={k("diss")} tag="span"
              ph="Sujet de la dissertation..." style={{ fontSize: 14, color: "#1a2332", fontWeight: 500, flex: 1 }} />
         </div>
-
+ 
         {/* Lignes d'écriture */}
         {[...Array(7)].map((_, i) => (
           <div key={i} style={{ height: 1, background: "#e6eaf0", marginBottom: 26 }} />
@@ -478,11 +493,11 @@ const DossierView = ({ st, sid, onTitleChange }) => {
     </div>
   );
 };
-
+ 
 // ── Canvas Mindmap ───────────────────────────────────────────────
-
+ 
 const CARD_COLORS = ["#3b6ea5","#c96a2a","#5b8a3a","#8b4a9a","#2a8a7a","#6b7890","#a04040","#c0983a"];
-
+ 
 const CANVAS_DEFAULTS = [
   { id:"lf",  title:"Leitfrage",          color:"#c96a2a", x:20,  y:20,  w:380, h:90,  type:"text",  content:"Problématique à synthétiser..." },
   { id:"bg",  title:"Schlüsselbegriffe",  color:"#3b6ea5", x:20,  y:130, w:200, h:220, type:"text",  content:"• Begriff 1\n• Begriff 2\n• Begriff 3" },
@@ -491,30 +506,30 @@ const CANVAS_DEFAULTS = [
   { id:"bil", title:"Bilan",              color:"#2a8a7a", x:20,  y:370, w:620, h:90,  type:"text",  content:"Synthèse et conclusion du sous-thème..." },
   { id:"lnk", title:"Liens entre thèmes", color:"#6b7890", x:660, y:370, w:160, h:90,  type:"text",  content:"↔ Thème 2\n↔ Thème 3" },
 ];
-
+ 
 const CanvasCard = ({ card, sid, onDragStart, onResizeStart, onUpdate, onDelete, isDragging, isResizing }) => {
   const titleRef   = useRef(null);
   const contentRef = useRef(null);
   const imgKey     = `${sid}_cv_img_${card.id}`;
-
+ 
   const [imgSrc, setImgSrc] = useState(() => {
     try { return localStorage.getItem(imgKey) || null; } catch { return null; }
   });
-
+ 
   useEffect(() => {
     if (titleRef.current)   titleRef.current.textContent   = card.title;
     if (contentRef.current) contentRef.current.textContent = card.content || "";
   }, []);
-
+ 
   const loadImg = (file) => {
     if (!file || !file.type.startsWith("image/")) return;
     const r = new FileReader();
     r.onload = e => { setImgSrc(e.target.result); try { localStorage.setItem(imgKey, e.target.result); } catch {} };
     r.readAsDataURL(file);
   };
-
+ 
   const active = isDragging || isResizing;
-
+ 
   return (
     <div style={{
       position: "absolute", top: card.y, left: card.x,
@@ -539,7 +554,7 @@ const CanvasCard = ({ card, sid, onDragStart, onResizeStart, onUpdate, onDelete,
         <button onClick={onDelete} onPointerDown={e => e.stopPropagation()}
           style={{ background:"none", border:"none", color:"rgba(255,255,255,.6)", cursor:"pointer", fontSize:16, padding:"0 3px", lineHeight:1, flexShrink:0 }}>×</button>
       </div>
-
+ 
       {/* Corps */}
       <div style={{ padding:"8px 10px", height:"calc(100% - 26px)", overflow:"hidden" }}>
         {card.type === "image"
@@ -564,7 +579,7 @@ const CanvasCard = ({ card, sid, onDragStart, onResizeStart, onUpdate, onDelete,
               style={{ outline:"none", fontSize:13, lineHeight:1.6, color:"#3a4558", height:"100%", cursor:"text", whiteSpace:"pre-wrap", overflowY:"auto" }} />
         }
       </div>
-
+ 
       {/* Poignée de redimensionnement ↘ */}
       <div
         onPointerDown={e => { e.stopPropagation(); onResizeStart(e); }}
@@ -577,34 +592,34 @@ const CanvasCard = ({ card, sid, onDragStart, onResizeStart, onUpdate, onDelete,
     </div>
   );
 };
-
+ 
 const MindmapCanvas = ({ sid }) => {
   const lsKey   = `${sid}_canvas_state`;
   const counter = useRef(100);
-
+ 
   const [cards, setCards] = useState(() => {
     try {
       const saved = localStorage.getItem(lsKey);
       return saved ? JSON.parse(saved) : CANVAS_DEFAULTS.map(c => ({ ...c }));
     } catch { return CANVAS_DEFAULTS.map(c => ({ ...c })); }
   });
-
+ 
   const [dragging, setDragging] = useState(null);
   const [resizing, setResizing] = useState(null);
   const containerRef = useRef(null);
-
+ 
   const persist = (list) => { try { localStorage.setItem(lsKey, JSON.stringify(list)); } catch {} };
-
+ 
   const updateCard = (id, updates) => setCards(prev => {
     const next = prev.map(c => c.id === id ? { ...c, ...updates } : c);
     persist(next); return next;
   });
-
+ 
   const deleteCard = (id) => setCards(prev => {
     const next = prev.filter(c => c.id !== id);
     persist(next); return next;
   });
-
+ 
   const addCard = (type) => {
     const id = `card_${counter.current++}`;
     const card = {
@@ -617,7 +632,7 @@ const MindmapCanvas = ({ sid }) => {
     };
     setCards(prev => { const next = [...prev, card]; persist(next); return next; });
   };
-
+ 
   const startDrag = (e, cardId) => {
     if (!containerRef.current) return;
     const rect = containerRef.current.getBoundingClientRect();
@@ -629,13 +644,13 @@ const MindmapCanvas = ({ sid }) => {
     });
     e.preventDefault();
   };
-
+ 
   const startResize = (e, cardId) => {
     const card = cards.find(c => c.id === cardId);
     setResizing({ cardId, startX: e.clientX, startY: e.clientY, startW: card.w, startH: card.h });
     e.preventDefault();
   };
-
+ 
   useEffect(() => {
     const onMove = (e) => {
       if (dragging && containerRef.current) {
@@ -658,7 +673,7 @@ const MindmapCanvas = ({ sid }) => {
     document.addEventListener("pointerup",   onUp);
     return () => { document.removeEventListener("pointermove", onMove); document.removeEventListener("pointerup", onUp); };
   }, [dragging, resizing]);
-
+ 
   return (
     <div style={{ display:"flex", flexDirection:"column", flex:1, minHeight:0 }}>
       {/* Toolbar */}
@@ -672,7 +687,7 @@ const MindmapCanvas = ({ sid }) => {
           + Bloc texte
         </button>
       </div>
-
+ 
       {/* Canvas scrollable */}
       <div ref={containerRef} style={{ flex:1, minHeight:0, overflow:"auto", position:"relative", background:"#f5f6f9", backgroundImage:"radial-gradient(circle, #c4c9d4 1px, transparent 1px)", backgroundSize:"22px 22px", cursor: dragging ? "grabbing" : resizing ? "se-resize" : "default" }}>
         <div style={{ width:1600, height:1000, position:"relative" }}>
@@ -692,9 +707,9 @@ const MindmapCanvas = ({ sid }) => {
     </div>
   );
 };
-
+ 
 // ── Quiz (Flashcards) ───────────────────────────────────────────
-
+ 
 const QUIZ_DEFAULTS = () => [
   { id:"q1", question:"Quelles sont les causes principales ?",    answer:"Réponse à renseigner.", known:false },
   { id:"q2", question:"Quels sont les acteurs clés ?",             answer:"Réponse à renseigner.", known:false },
@@ -702,7 +717,7 @@ const QUIZ_DEFAULTS = () => [
   { id:"q4", question:"Comment définir le concept central ?",      answer:"Réponse à renseigner.", known:false },
   { id:"q5", question:"Quelle est la Leitfrage du sous-thème ?",   answer:"Réponse à renseigner.", known:false },
 ];
-
+ 
 // Champ éditable dans la flashcard — stopPropagation pour ne pas déclencher le flip
 const CardField = ({ storageKey, defaultVal, style, ph }) => {
   const ref = useRef(null);
@@ -723,51 +738,51 @@ const CardField = ({ storageKey, defaultVal, style, ph }) => {
     />
   );
 };
-
+ 
 const QuizView = ({ sid }) => {
   const lsKey  = `${sid}_quiz`;
   const ctr    = useRef(100);
-
+ 
   const [cards, setCards] = useState(() => {
     try { const s = localStorage.getItem(lsKey); return s ? JSON.parse(s) : QUIZ_DEFAULTS(); }
     catch { return QUIZ_DEFAULTS(); }
   });
   const [idx,     setIdx]     = useState(0);
   const [flipped, setFlipped] = useState(false);
-
+ 
   const save = list => { try { localStorage.setItem(lsKey, JSON.stringify(list)); } catch {} };
-
+ 
   const go = dir => { setFlipped(false); setTimeout(() => setIdx(i => Math.max(0, Math.min(cards.length-1, i+dir))), 120); };
-
+ 
   const toggleKnown = () => {
     const next = cards.map((c,i) => i===idx ? { ...c, known:!c.known } : c);
     save(next); setCards(next);
   };
-
+ 
   const addCard = () => {
     const id = `q_${ctr.current++}`;
     const next = [...cards, { id, question:"Nouvelle question ?", answer:"Réponse à renseigner.", known:false }];
     save(next); setCards(next); setIdx(next.length-1); setFlipped(false);
   };
-
+ 
   const delCard = () => {
     if (cards.length <= 1) return;
     const next = cards.filter((_,i) => i !== idx);
     save(next); setCards(next); setIdx(Math.min(idx, next.length-1)); setFlipped(false);
   };
-
+ 
   const shuffle = () => {
     const next = [...cards].sort(() => Math.random()-.5).map(c => ({ ...c, known:false }));
     save(next); setCards(next); setIdx(0); setFlipped(false);
   };
-
+ 
   const cur       = cards[Math.min(idx, cards.length-1)];
   const knownCnt  = cards.filter(c => c.known).length;
   const pct       = cards.length ? (knownCnt / cards.length) * 100 : 0;
-
+ 
   return (
     <div style={{ flex:1, display:"flex", flexDirection:"column", background:"#f5f6f9" }}>
-
+ 
       {/* Toolbar */}
       <div data-np style={{ height:46, flexShrink:0, background:"#fff", borderBottom:"1px solid #e2e6ed", display:"flex", alignItems:"center", padding:"0 20px", gap:12 }}>
         <span style={{ fontSize:13, fontWeight:600, color:"#2d60a7" }}>{knownCnt} / {cards.length} connus</span>
@@ -778,11 +793,11 @@ const QuizView = ({ sid }) => {
         <button onClick={shuffle} style={{ padding:"5px 12px", background:"#f5f6f9", color:"#5a6880", border:"1px solid #d8dde8", borderRadius:5, cursor:"pointer", fontSize:13 }}>🔀 Mélanger</button>
         <button onClick={addCard} style={{ padding:"5px 14px", background:"#2d60a7", color:"#fff", border:"none", borderRadius:5, cursor:"pointer", fontSize:13 }}>+ Carte</button>
       </div>
-
+ 
       {/* Deck */}
       <div style={{ flex:1, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", padding:"28px 24px", gap:22 }}>
         <div style={{ fontSize:13, color:"#8898b0" }}>{idx+1} / {cards.length}</div>
-
+ 
         {/* Flip card */}
         <div onClick={() => setFlipped(f => !f)} style={{ width:"100%", maxWidth:640, height:290, perspective:"1400px", cursor:"pointer" }}>
           <div style={{
@@ -824,27 +839,27 @@ const QuizView = ({ sid }) => {
             </div>
           </div>
         </div>
-
+ 
         {/* Contrôles */}
         <div style={{ display:"flex", alignItems:"center", gap:12 }}>
           <button onClick={() => go(-1)} disabled={idx===0}
             style={{ width:40, height:40, borderRadius:"50%", border:"1px solid #d8dde8", background:idx>0?"#fff":"transparent", cursor:idx>0?"pointer":"default", color:idx>0?"#1a2332":"#d0d5de", fontSize:18 }}>←</button>
-
+ 
           <button onClick={toggleKnown} style={{
             padding:"8px 20px", borderRadius:8, cursor:"pointer", fontSize:14, fontWeight:600, border:"1px solid",
             background:cur.known?"#e8f5e9":"#fff3e0",
             color:cur.known?"#2e7d32":"#e65100",
             borderColor:cur.known?"#a5d6a7":"#ffcc80",
           }}>{cur.known ? "✓ Connu" : "✗ À revoir"}</button>
-
+ 
           <button onClick={() => setFlipped(f => !f)}
             style={{ padding:"8px 22px", borderRadius:8, background:"#2d60a7", color:"#fff", border:"none", cursor:"pointer", fontSize:14, fontWeight:600 }}>
             Retourner
           </button>
-
+ 
           <button onClick={() => go(1)} disabled={idx===cards.length-1}
             style={{ width:40, height:40, borderRadius:"50%", border:"1px solid #d8dde8", background:idx<cards.length-1?"#fff":"transparent", cursor:idx<cards.length-1?"pointer":"default", color:idx<cards.length-1?"#1a2332":"#d0d5de", fontSize:18 }}>→</button>
-
+ 
           <button onClick={delCard} disabled={cards.length<=1}
             style={{ width:36, height:36, borderRadius:"50%", border:"1px solid #fecaca", background:cards.length>1?"#fff5f5":"transparent", cursor:cards.length>1?"pointer":"default", color:cards.length>1?"#dc2626":"#d0d5de", fontSize:16 }}>×</button>
         </div>
@@ -852,9 +867,9 @@ const QuizView = ({ sid }) => {
     </div>
   );
 };
-
+ 
 // ── Sidebar ──────────────────────────────────────────────────────
-
+ 
 // Nom de thème éditable dans la sidebar
 const ThemeLabel = ({ themeId, defaultTitle, open }) => {
   const ref  = useRef(null);
@@ -875,16 +890,16 @@ const ThemeLabel = ({ themeId, defaultTitle, open }) => {
     />
   );
 };
-
+ 
 const Sidebar = ({ themes, activePath, onSelect, stTitles }) => {
   const [expanded, setExpanded] = useState(() => new Set([activePath[0]]));
-
+ 
   const toggle = (id) => setExpanded(prev => {
     const next = new Set(prev);
     next.has(id) ? next.delete(id) : next.add(id);
     return next;
   });
-
+ 
   return (
     <aside data-np style={{
       width: 240, flexShrink: 0,
@@ -895,7 +910,7 @@ const Sidebar = ({ themes, activePath, onSelect, stTitles }) => {
         <div style={{ fontSize: 15, fontWeight: 700, color: "#fff" }}>DNL</div>
         <div style={{ fontSize: 12, color: "#6a7f98", marginTop: 2 }}>Geschichte &amp; Géographie</div>
       </div>
-
+ 
       <div style={{ flex: 1, padding: "8px 0" }}>
         {themes.map((theme) => {
           const open = expanded.has(theme.id);
@@ -912,7 +927,7 @@ const Sidebar = ({ themes, activePath, onSelect, stTitles }) => {
                 <ThemeLabel themeId={theme.id} defaultTitle={`Thème ${theme.numero}`} open={open} />
                 <span style={{ fontSize:12, opacity:0.4, color: open ? "#fff" : "#6a7f98", flexShrink:0 }}>{theme.sousThemes.length}</span>
               </div>
-
+ 
               {open && theme.sousThemes.map((st) => {
                 const active = activePath[0] === theme.id && activePath[1] === st.id;
                 const label  = stTitles?.[st.id] || st.titre;
@@ -935,14 +950,14 @@ const Sidebar = ({ themes, activePath, onSelect, stTitles }) => {
           );
         })}
       </div>
-
+ 
       <div style={{ padding: "10px 20px", borderTop: "1px solid #28395a", fontSize: 11, color: "#4a5e78" }}>
         7 sous-thèmes
       </div>
     </aside>
   );
 };
-
+ 
 // ── Écran de connexion ───────────────────────────────────────────
 const LoginScreen = () => {
   const [email,   setEmail]   = useState("");
@@ -951,7 +966,7 @@ const LoginScreen = () => {
   const [err,     setErr]     = useState("");
   const [msg,     setMsg]     = useState("");
   const [loading, setLoading] = useState(false);
-
+ 
   const submit = async () => {
     if (!email || !pwd) return;
     setLoading(true); setErr(""); setMsg("");
@@ -962,9 +977,9 @@ const LoginScreen = () => {
     else if (mode === "signup") setMsg("Vérifie tes emails pour confirmer ton compte !");
     setLoading(false);
   };
-
+ 
   const inp = { padding:"10px 14px", border:"1px solid #d8dde8", borderRadius:6, fontSize:14, outline:"none", fontFamily:"'Plus Jakarta Sans',sans-serif", width:"100%", boxSizing:"border-box" };
-
+ 
   return (
     <div style={{ height:"100vh", display:"flex", alignItems:"center", justifyContent:"center", background:"#1d2b42", fontFamily:"'Plus Jakarta Sans',sans-serif" }}>
       <div style={{ background:"#fff", borderRadius:12, padding:"40px 36px", width:"100%", maxWidth:380, boxShadow:"0 20px 60px rgba(0,0,0,.35)" }}>
@@ -998,17 +1013,17 @@ const LoginScreen = () => {
     </div>
   );
 };
-
+ 
 // ── App ──────────────────────────────────────────────────────────
 const App = () => {
   const { isMobile } = useViewport();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-
+ 
   // ── Auth ──────────────────────────────────────────────────
   const [user,      setUser]      = useState(null);
   const [authReady, setAuthReady] = useState(false);
   const [syncing,   setSyncing]   = useState(false);
-
+ 
   useEffect(() => {
     _sb.auth.getSession().then(async ({ data: { session } }) => {
       if (session?.user) {
@@ -1029,27 +1044,29 @@ const App = () => {
         setUser(session.user);
         setAuthReady(true);
       } else if (event === "SIGNED_OUT") {
-        _uid = null; setUser(null);
+        _uid = null;
+        _clearLocalData();
+        setUser(null);
       }
     });
     return () => subscription.unsubscribe();
   }, []);
-
+ 
   const [activePath, setActivePath] = useState([
     COURS.themes[0].id,
     COURS.themes[0].sousThemes[0].id,
   ]);
   const [tab, setTab] = useState("dossier");
-
+ 
   const activeTheme = COURS.themes.find((t) => t.id === activePath[0]);
   const activeST = activeTheme?.sousThemes.find((s) => s.id === activePath[1]);
-
+ 
   // Flat list for prev/next
   const allSTs = COURS.themes.flatMap((t) =>
     t.sousThemes.map((st) => ({ themeId: t.id, st }))
   );
   const currentIdx = allSTs.findIndex((x) => x.st.id === activePath[1]);
-
+ 
   const [stTitles, setStTitles] = useState(() => {
     const init = {};
     COURS.themes.forEach(t => t.sousThemes.forEach(st => {
@@ -1058,12 +1075,12 @@ const App = () => {
     }));
     return init;
   });
-
+ 
   const goTo = (idx) => {
     if (idx < 0 || idx >= allSTs.length) return;
     setActivePath([allSTs[idx].themeId, allSTs[idx].st.id]);
   };
-
+ 
   // ── Auth gates ──────────────────────────────────────────────
   if (!authReady) return (
     <div style={{ height:"100vh", display:"flex", alignItems:"center", justifyContent:"center", fontFamily:"'Plus Jakarta Sans',sans-serif", color:"#8898b0", fontSize:16 }}>
@@ -1077,9 +1094,9 @@ const App = () => {
       <div>Synchronisation des données...</div>
     </div>
   );
-
+ 
   const TABS = ["dossier", "mindmap", "quiz"];
-
+ 
   return (
     <div style={{
       height: "100vh", display: "flex", flexDirection: "column",
@@ -1106,7 +1123,7 @@ const App = () => {
         <button onClick={() => _sb.auth.signOut()} title="Se déconnecter"
           style={{ padding:"5px 10px", background:"#f5f6f9", color:"#5a6880", border:"1px solid #d8dde8", borderRadius:5, cursor:"pointer", fontSize:15, marginLeft:4 }}>⏻</button>
       </header>
-
+ 
       <div style={{ flex: 1, display: "flex", overflow: "hidden" }}>
         {/* Overlay mobile */}
         {isMobile && sidebarOpen && (
@@ -1121,7 +1138,7 @@ const App = () => {
             onSelect={(tId, stId) => { setActivePath([tId, stId]); setSidebarOpen(false); }}
             stTitles={stTitles} />
         </div>
-
+ 
         <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
           {/* Fil d'Ariane + onglets */}
           <div style={{
@@ -1146,7 +1163,7 @@ const App = () => {
               ))}
             </div>
           </div>
-
+ 
           {/* Contenu de l'onglet */}
           <div style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column", overflow: "hidden" }}>
             {tab === "dossier" && activeST && (
@@ -1163,7 +1180,7 @@ const App = () => {
               <QuizView key={activeST.id} sid={activeST.id} />
             )}
           </div>
-
+ 
           {/* Navigation bas */}
           <div data-np style={{
             height: 52, flexShrink: 0, background: "#fff",
@@ -1203,7 +1220,7 @@ const App = () => {
     </div>
   );
 };
-
+ 
 ReactDOM.createRoot(document.getElementById("root")).render(<App />);
 </script>
 </body>
