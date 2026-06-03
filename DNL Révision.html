@@ -1,0 +1,1210 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DNL — Révision</title>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    html, body, #root { height: 100%; margin: 0; padding: 0; }
+    body { font-family: 'Plus Jakarta Sans', sans-serif; background: #f0f2f5; color: #1a2332; }
+    h1, h2, h3, p { margin: 0; }
+    button { font-family: inherit; }
+
+    /* Editable fields */
+    [contenteditable] { cursor: text; }
+    [contenteditable]:hover { background: rgba(45,96,167,.05); border-radius: 2px; }
+    [contenteditable]:focus { outline: 2px solid rgba(45,96,167,.25); outline-offset: 1px; border-radius: 2px; background: rgba(45,96,167,.04); }
+    [contenteditable]:empty::before { content: attr(data-ph); color: #b8c0cc; font-style: italic; pointer-events: none; }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 5px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #cdd2dc; border-radius: 3px; }
+
+    /* Sidebar scrollbar */
+    aside::-webkit-scrollbar-thumb { background: #3a4e68; }
+
+    /* Print */
+    @media print {
+      [data-np] { display: none !important; }
+      body, html, #root { height: auto !important; overflow: visible !important; background: white; }
+      #root > div { height: auto !important; overflow: visible !important; }
+      .print-zone { overflow: visible !important; height: auto !important; }
+    }
+  </style>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel">
+const { useState, useRef, useEffect } = React;
+
+// ════════════════════════════════════════════════════════════════
+//  SUPABASE — Auth & synchronisation multi-appareils
+// ════════════════════════════════════════════════════════════════
+const SUPABASE_URL = "https://bfxtjqevxdrewokaemzx.supabase.co";
+const SUPABASE_KEY = "sb_publishable_F-8ef9orhZMCnTOGTfDlEg_KQc9pRyL";
+const _sb  = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+let   _uid = null;
+
+// Intercepteur : chaque localStorage.setItem sync automatiquement vers Supabase
+const _origSet = localStorage.setItem.bind(localStorage);
+localStorage.setItem = (k, v) => {
+  _origSet(k, v);
+  if (_uid && !k.startsWith("sb-") && !k.startsWith("supabase.")) {
+    const isImg = k.startsWith("img_");
+    _sb.from(isImg ? "images" : "content")
+       .upsert(isImg ? { user_id:_uid, key:k.slice(4), data:v }
+                     : { user_id:_uid, key:k, value:v })
+       .catch(e => console.warn("⚡sync:", e));
+  }
+};
+
+// Chargement initial depuis Supabase → localStorage
+const loadUserData = async (uid) => {
+  const [{ data:rows, error:e1 }, { data:imgs, error:e2 }] = await Promise.all([
+    _sb.from("content").select("key,value").eq("user_id", uid),
+    _sb.from("images").select("key,data").eq("user_id", uid),
+  ]);
+  if (e1) console.warn("content:", e1.message);
+  if (e2) console.warn("images:", e2.message);
+  if (rows) rows.forEach(r => { try { _origSet(r.key, r.value); } catch {} });
+  if (imgs) imgs.forEach(r => { try { _origSet("img_"+r.key, r.data); } catch {} });
+};
+
+// DB — lectures localStorage ; écritures interceptées ci-dessus
+const DB = {
+  read:    k      => { try { return localStorage.getItem(k); }               catch { return null; } },
+  write:   (k,v)  => { try { localStorage.setItem(k, v); }                   catch {} },
+  readJ:   (k,fb) => { try { const v=localStorage.getItem(k); return v?JSON.parse(v):fb; } catch { return fb; } },
+  writeJ:  (k,v)  => { try { localStorage.setItem(k,JSON.stringify(v)); }    catch {} },
+  readImg: k      => { try { return localStorage.getItem("img_"+k); }        catch { return null; } },
+  writeImg:(k,v)  => { try { localStorage.setItem("img_"+k,v); }             catch {} },
+};
+
+// ── Viewport responsive ──────────────────────────────────────────
+const useViewport = () => {
+  const [w, setW] = useState(window.innerWidth);
+  useEffect(() => {
+    const h = () => setW(window.innerWidth);
+    window.addEventListener("resize", h);
+    return () => window.removeEventListener("resize", h);
+  }, []);
+  return { isMobile: w < 768, isTablet: w >= 768 && w < 1024 };
+};
+
+// ════════════════════════════════════════════════════════════════
+//  DONNÉES DU COURS
+//  • Modifiez ici les titres, textes et questions directement
+//    dans le code source.
+//  • Vous pouvez aussi cliquer sur n'importe quel texte de la
+//    page pour l'éditer — les modifications sont sauvegardées
+//    automatiquement dans le navigateur.
+// ════════════════════════════════════════════════════════════════
+
+function creerST(id, numero, titre) {
+  return {
+    id, numero, titre,
+    intro:
+      "Introduction du sous-thème. Rédigez ici le contexte général : mise en situation, repères géographiques ou historiques essentiels.",
+    chronologie: [
+      { date: "Datum 1 :", texte: "Événement à renseigner" },
+      { date: "Datum 2 :", texte: "Événement à renseigner" },
+      { date: "Datum 3 :", texte: "Événement à renseigner" },
+    ],
+    leitfrage: "Leitfrage / Problématique : à renseigner ?",
+    docs: [
+      { num: 1, type: "img", titre: "Titre du document 1", source: "Auteur, Année, Source." },
+      { num: 2, type: "txt", titre: "Titre du document 2",
+        texte: "Extrait du document 2 à renseigner. Témoignage, source primaire ou secondaire.", source: "Source, date." },
+      { num: 3, type: "img", titre: "Titre du document 3", source: "Auteur, Année." },
+      { num: 4, type: "txt", titre: "Titre du document 4",
+        texte: "Extrait du document 4 à renseigner.", source: "Source, date." },
+      { num: 5, type: "img", titre: "Titre du document 5", source: "Auteur, Année." },
+    ],
+    questions: {
+      analyser: [
+        "Question 1 : à renseigner...",
+        "Question 2 : à renseigner...",
+        "Question 3 : à renseigner...",
+      ],
+      recherche: ["Question de recherche : à renseigner..."],
+    },
+    dissertation: "Sujet de la dissertation finale à renseigner.",
+  };
+}
+
+const COURS = {
+  titre: "DNL — Geschichte & Géographie",
+  themes: [
+    {
+      id: "t1", numero: 1, titre: "Titre du Thème 1",
+      sousThemes: [
+        creerST("t1s1", "1.1", "Titre du Sous-thème 1.1"),
+        creerST("t1s2", "1.2", "Titre du Sous-thème 1.2"),
+      ],
+    },
+    {
+      id: "t2", numero: 2, titre: "Titre du Thème 2",
+      sousThemes: [
+        creerST("t2s1", "2.1", "Titre du Sous-thème 2.1"),
+        creerST("t2s2", "2.2", "Titre du Sous-thème 2.2"),
+        creerST("t2s3", "2.3", "Titre du Sous-thème 2.3"),
+        creerST("t2s4", "2.4", "Titre du Sous-thème 2.4"),
+      ],
+    },
+    {
+      id: "t3", numero: 3, titre: "Titre du Thème 3",
+      sousThemes: [
+        creerST("t3s1", "3.1", "Titre du Sous-thème 3.1"),
+      ],
+    },
+  ],
+};
+
+// ── Champ de texte éditable ──────────────────────────────────────
+// Affiche `defaultVal`, lit depuis localStorage si déjà édité,
+// et sauvegarde à chaque modification.
+const E = ({ defaultVal, storageKey, tag = "div", ph = "Cliquez pour éditer", style = {}, onChange }) => {
+  const Elem = tag;
+  const ref = useRef(null);
+  useEffect(() => {
+    if (!ref.current) return;
+    const saved = localStorage.getItem(storageKey);
+    ref.current.textContent = saved !== null ? saved : (defaultVal || "");
+  }, [storageKey]);
+  const save = () => {
+    if (!ref.current) return;
+    const val = ref.current.textContent;
+    localStorage.setItem(storageKey, val);
+    onChange?.(val);
+  };
+  return (
+    <Elem
+      ref={ref}
+      contentEditable
+      suppressContentEditableWarning
+      onBlur={save}
+      data-ph={ph}
+      style={{ outline: "none", ...style }}
+    />
+  );
+};
+
+// ── Slot image (clic ou glisser-déposer) ─────────────────────────
+const ImgSlot = ({ storageKey, height = 140 }) => {
+  const [src, setSrc] = useState(() => {
+    try { return localStorage.getItem("img_" + storageKey) || null; } catch { return null; }
+  });
+
+  const charger = (file) => {
+    if (!file || !file.type.startsWith("image/")) return;
+    const r = new FileReader();
+    r.onload = (e) => {
+      setSrc(e.target.result);
+      try { localStorage.setItem("img_" + storageKey, e.target.result); } catch {}
+    };
+    r.readAsDataURL(file);
+  };
+
+  return (
+    <div
+      onClick={() => {
+        const inp = document.createElement("input");
+        inp.type = "file"; inp.accept = "image/*";
+        inp.onchange = (e) => charger(e.target.files[0]);
+        inp.click();
+      }}
+      onDrop={(e) => { e.preventDefault(); charger(e.dataTransfer.files[0]); }}
+      onDragOver={(e) => e.preventDefault()}
+      style={{
+        width: "100%", height, borderRadius: 4, overflow: "hidden",
+        cursor: "pointer", position: "relative", flexShrink: 0,
+        background: src
+          ? "#000"
+          : "repeating-linear-gradient(45deg,#e6e8ec,#e6e8ec 2px,#f3f4f6 2px,#f3f4f6 12px)",
+        border: src ? "none" : "2px dashed #c4c9d4",
+        display: "flex", alignItems: "center", justifyContent: "center",
+      }}
+    >
+      {src
+        ? <img src={src} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+        : <div style={{ color: "#9aa3b0", fontSize: 13, textAlign: "center", padding: 10, userSelect: "none" }}>
+            📷<br />Cliquer ou glisser une image
+          </div>
+      }
+      {src && (
+        <div style={{
+          position: "absolute", top: 6, right: 6,
+          background: "rgba(0,0,0,.55)", color: "#fff",
+          fontSize: 11, padding: "2px 7px", borderRadius: 3, pointerEvents: "none",
+        }}>✎ remplacer</div>
+      )}
+    </div>
+  );
+};
+
+// ── Badge numéro de document ─────────────────────────────────────
+const NumDoc = ({ n, color }) => (
+  <span style={{
+    display: "inline-flex", width: 22, height: 22, flexShrink: 0,
+    background: color, color: "#fff", borderRadius: 4,
+    alignItems: "center", justifyContent: "center",
+    fontSize: 12, fontWeight: 700, marginRight: 7,
+  }}>{n}</span>
+);
+
+// ── Vue Dossier (fiche sous-thème) ───────────────────────────────
+const DossierView = ({ st, sid, onTitleChange }) => {
+  const k = (id) => sid + "_" + id;
+  const { isMobile } = useViewport();
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column" }}>
+
+      {/* ① En-tête : intro + chronologie */}
+      <div style={{
+        display: "flex", flexDirection: isMobile ? "column" : "row",
+        gap: 16, padding: "20px 26px",
+        borderBottom: "1px solid #e2e6ed", background: "#fff",
+      }}>
+        {/* Badge vertical */}
+        <div style={{
+          writingMode: "vertical-rl", transform: "rotate(180deg)",
+          background: "#c96a2a", color: "#fff",
+          fontSize: 10, letterSpacing: "0.14em", textTransform: "uppercase",
+          padding: "8px 5px", borderRadius: 3, flexShrink: 0,
+          display: "flex", alignItems: "center", justifyContent: "center",
+        }}>
+          Dossier {st.numero.split(".")[0]}
+        </div>
+
+        {/* Titre + intro 2 colonnes */}
+        <div style={{ flex: 2 }}>
+          <E
+            defaultVal={st.titre} storageKey={k("titre")} tag="h1"
+            ph="Titre du sous-thème"
+            style={{ fontSize: 22, fontWeight: 700, lineHeight: 1.2, marginBottom: 12 }}
+            onChange={onTitleChange}
+          />
+          <E
+            defaultVal={st.intro} storageKey={k("intro")} tag="p"
+            ph="Introduction..."
+            style={{ fontSize: 13.5, lineHeight: 1.7, color: "#3a4558" }}
+          />
+        </div>
+
+        {/* Chronologie */}
+        <div style={{
+          flex: 1, minWidth: 160,
+          border: "1px dashed #c4c9d4", borderRadius: 4, padding: "12px 14px",
+        }}>
+          <div style={{ fontSize: 11, fontWeight: 600, color: "#8898b0", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 10 }}>
+            Chronologie
+          </div>
+          {st.chronologie.map((item, i) => (
+            <div key={i} style={{ display: "flex", gap: 8, marginBottom: 9, alignItems: "flex-start" }}>
+              <E
+                defaultVal={item.date} storageKey={k("chd" + i)} tag="span"
+                ph="Date" style={{ fontSize: 13, fontWeight: 600, color: "#2d60a7", whiteSpace: "nowrap", flexShrink: 0 }}
+              />
+              <E
+                defaultVal={item.texte} storageKey={k("cht" + i)} tag="span"
+                ph="Événement" style={{ fontSize: 13, color: "#5a6880", lineHeight: 1.5 }}
+              />
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* ② Leitfrage */}
+      <div style={{
+        padding: "10px 26px", borderBottom: "1px solid #e2e6ed",
+        borderLeft: "4px solid #c96a2a", background: "#fdf4ee",
+      }}>
+        <E
+          defaultVal={st.leitfrage} storageKey={k("lf")} tag="p"
+          ph="Leitfrage / Problématique..."
+          style={{ fontSize: 15, fontWeight: 600, color: "#c96a2a" }}
+        />
+      </div>
+
+      {/* ③ Documents */}
+      <div style={{ padding: "20px 26px", background: "#f5f6f9", display: "flex", flexDirection: "column", gap: 18 }}>
+
+        {/* Rangée 1 : Doc 1 (img) + Doc 2 (txt) + Doc 3 (img) */}
+        <div style={{ display: "flex", flexDirection: isMobile ? "column" : "row", gap: 18, alignItems: "flex-start" }}>
+
+          {/* Doc 1 */}
+          <div style={{ flex: 2.2, display: "flex", flexDirection: "column", gap: 6 }}>
+            <div style={{ display: "flex", alignItems: "center" }}>
+              <NumDoc n={1} color="#2d60a7" />
+              <E defaultVal={st.docs[0].titre} storageKey={k("d1t")} tag="span"
+                 ph="Titre" style={{ fontSize: 14, fontWeight: 600 }} />
+            </div>
+            <ImgSlot storageKey={k("d1img")} height={145} />
+            <E defaultVal={st.docs[0].source} storageKey={k("d1src")} tag="span"
+               ph="Source..." style={{ fontSize: 11, color: "#8898b0" }} />
+          </div>
+
+          {/* Doc 2 */}
+          <div style={{ flex: 2, display: "flex", flexDirection: "column", gap: 6 }}>
+            <div style={{ display: "flex", alignItems: "center" }}>
+              <NumDoc n={2} color="#c96a2a" />
+              <E defaultVal={st.docs[1].titre} storageKey={k("d2t")} tag="span"
+                 ph="Titre" style={{ fontSize: 14, fontWeight: 600 }} />
+            </div>
+            <div style={{
+              borderLeft: "3px solid #2d60a7", paddingLeft: 12,
+              paddingTop: 10, paddingBottom: 10,
+              background: "#fff", borderRadius: "0 4px 4px 0", minHeight: 110,
+            }}>
+              <E defaultVal={st.docs[1].texte} storageKey={k("d2tx")} tag="p"
+                 ph="Texte du document..." style={{ fontSize: 13, lineHeight: 1.7, color: "#3a4558", fontStyle: "italic" }} />
+            </div>
+            <E defaultVal={st.docs[1].source} storageKey={k("d2src")} tag="span"
+               ph="Source..." style={{ fontSize: 11, color: "#8898b0" }} />
+          </div>
+
+          {/* Doc 3 */}
+          <div style={{ flex: 1.5, display: "flex", flexDirection: "column", gap: 6 }}>
+            <div style={{ display: "flex", alignItems: "center" }}>
+              <NumDoc n={3} color="#2d60a7" />
+              <E defaultVal={st.docs[2].titre} storageKey={k("d3t")} tag="span"
+                 ph="Titre" style={{ fontSize: 14, fontWeight: 600 }} />
+            </div>
+            <ImgSlot storageKey={k("d3img")} height={145} />
+            <E defaultVal={st.docs[2].source} storageKey={k("d3src")} tag="span"
+               ph="Source..." style={{ fontSize: 11, color: "#8898b0" }} />
+          </div>
+        </div>
+
+        {/* Rangée 2 : Doc 4 (txt) + Doc 5 (img) + Questions */}
+        <div style={{ display: "flex", flexDirection: isMobile ? "column" : "row", gap: 18, alignItems: "flex-start" }}>
+
+          {/* Doc 4 */}
+          <div style={{ flex: 2.2, display: "flex", flexDirection: "column", gap: 6 }}>
+            <div style={{ display: "flex", alignItems: "center" }}>
+              <NumDoc n={4} color="#c96a2a" />
+              <E defaultVal={st.docs[3].titre} storageKey={k("d4t")} tag="span"
+                 ph="Titre" style={{ fontSize: 14, fontWeight: 600 }} />
+            </div>
+            <div style={{
+              borderLeft: "3px solid #2d60a7", paddingLeft: 12,
+              paddingTop: 10, paddingBottom: 10,
+              background: "#fff", borderRadius: "0 4px 4px 0", minHeight: 100,
+            }}>
+              <E defaultVal={st.docs[3].texte} storageKey={k("d4tx")} tag="p"
+                 ph="Texte du document..." style={{ fontSize: 13, lineHeight: 1.7, color: "#3a4558", fontStyle: "italic" }} />
+            </div>
+            <E defaultVal={st.docs[3].source} storageKey={k("d4src")} tag="span"
+               ph="Source..." style={{ fontSize: 11, color: "#8898b0" }} />
+          </div>
+
+          {/* Doc 5 */}
+          <div style={{ flex: 2.8, display: "flex", flexDirection: "column", gap: 6 }}>
+            <div style={{ display: "flex", alignItems: "center" }}>
+              <NumDoc n={5} color="#2d60a7" />
+              <E defaultVal={st.docs[4].titre} storageKey={k("d5t")} tag="span"
+                 ph="Titre" style={{ fontSize: 14, fontWeight: 600 }} />
+            </div>
+            <ImgSlot storageKey={k("d5img")} height={125} />
+            <E defaultVal={st.docs[4].source} storageKey={k("d5src")} tag="span"
+               ph="Source..." style={{ fontSize: 11, color: "#8898b0" }} />
+          </div>
+
+          {/* Panneau Questions */}
+          <div style={{ flex: 1.5 }}>
+            <div style={{
+              background: "#fff", border: "1px solid #d8dde8",
+              borderRadius: 6, padding: "14px 16px",
+            }}>
+              <div style={{ fontSize: 14, fontWeight: 700, color: "#2d60a7", marginBottom: 10, paddingBottom: 8, borderBottom: "1px solid #eaedf5" }}>
+                Questions
+              </div>
+              <div style={{ fontSize: 11, fontWeight: 600, color: "#8898b0", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 8 }}>
+                Analyser
+              </div>
+              {st.questions.analyser.map((q, i) => (
+                <div key={i} style={{ display: "flex", gap: 7, marginBottom: 9, alignItems: "flex-start" }}>
+                  <span style={{ fontSize: 13, fontWeight: 700, color: "#2d60a7", flexShrink: 0, marginTop: 1 }}>{i + 1}.</span>
+                  <E defaultVal={q} storageKey={k("qa" + i)} tag="span"
+                     ph="Question..." style={{ fontSize: 13, color: "#3a4558", lineHeight: 1.5 }} />
+                </div>
+              ))}
+              <div style={{ fontSize: 11, fontWeight: 600, color: "#8898b0", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 8, marginTop: 10 }}>
+                Recherche
+              </div>
+              {st.questions.recherche.map((q, i) => (
+                <div key={i} style={{ display: "flex", gap: 7, marginBottom: 9, alignItems: "flex-start" }}>
+                  <span style={{ fontSize: 13, fontWeight: 700, color: "#2d60a7", flexShrink: 0, marginTop: 1 }}>{st.questions.analyser.length + i + 1}.</span>
+                  <E defaultVal={q} storageKey={k("qr" + i)} tag="span"
+                     ph="Question..." style={{ fontSize: 13, color: "#3a4558", lineHeight: 1.5 }} />
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ④ Dissertation finale */}
+      <div style={{ padding: "20px 26px", borderTop: "2px solid #e2e6ed", background: "#fff" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 14 }}>
+          <span style={{ fontSize: 15, fontWeight: 700 }}>✍ Dissertation finale</span>
+          <div style={{ flex: 1, height: 1, background: "#e2e6ed" }} />
+        </div>
+
+        <div style={{
+          background: "#f5f6f9", border: "1px dashed #c4c9d4",
+          borderRadius: 4, padding: "10px 14px", marginBottom: 16,
+          display: "flex", gap: 8, alignItems: "center",
+        }}>
+          <span style={{ fontSize: 13, color: "#8898b0", flexShrink: 0 }}>Sujet :</span>
+          <E defaultVal={st.dissertation} storageKey={k("diss")} tag="span"
+             ph="Sujet de la dissertation..." style={{ fontSize: 14, color: "#1a2332", fontWeight: 500, flex: 1 }} />
+        </div>
+
+        {/* Lignes d'écriture */}
+        {[...Array(7)].map((_, i) => (
+          <div key={i} style={{ height: 1, background: "#e6eaf0", marginBottom: 26 }} />
+        ))}
+      </div>
+    </div>
+  );
+};
+
+// ── Canvas Mindmap ───────────────────────────────────────────────
+
+const CARD_COLORS = ["#3b6ea5","#c96a2a","#5b8a3a","#8b4a9a","#2a8a7a","#6b7890","#a04040","#c0983a"];
+
+const CANVAS_DEFAULTS = [
+  { id:"lf",  title:"Leitfrage",          color:"#c96a2a", x:20,  y:20,  w:380, h:90,  type:"text",  content:"Problématique à synthétiser..." },
+  { id:"bg",  title:"Schlüsselbegriffe",  color:"#3b6ea5", x:20,  y:130, w:200, h:220, type:"text",  content:"• Begriff 1\n• Begriff 2\n• Begriff 3" },
+  { id:"map", title:"Karte / Schéma",     color:"#5b8a3a", x:240, y:130, w:200, h:220, type:"image" },
+  { id:"arg", title:"Hauptargumente",     color:"#8b4a9a", x:460, y:20,  w:360, h:330, type:"text",  content:"Argument 1...\n\nArgument 2...\n\nArgument 3..." },
+  { id:"bil", title:"Bilan",              color:"#2a8a7a", x:20,  y:370, w:620, h:90,  type:"text",  content:"Synthèse et conclusion du sous-thème..." },
+  { id:"lnk", title:"Liens entre thèmes", color:"#6b7890", x:660, y:370, w:160, h:90,  type:"text",  content:"↔ Thème 2\n↔ Thème 3" },
+];
+
+const CanvasCard = ({ card, sid, onDragStart, onResizeStart, onUpdate, onDelete, isDragging, isResizing }) => {
+  const titleRef   = useRef(null);
+  const contentRef = useRef(null);
+  const imgKey     = `${sid}_cv_img_${card.id}`;
+
+  const [imgSrc, setImgSrc] = useState(() => {
+    try { return localStorage.getItem(imgKey) || null; } catch { return null; }
+  });
+
+  useEffect(() => {
+    if (titleRef.current)   titleRef.current.textContent   = card.title;
+    if (contentRef.current) contentRef.current.textContent = card.content || "";
+  }, []);
+
+  const loadImg = (file) => {
+    if (!file || !file.type.startsWith("image/")) return;
+    const r = new FileReader();
+    r.onload = e => { setImgSrc(e.target.result); try { localStorage.setItem(imgKey, e.target.result); } catch {} };
+    r.readAsDataURL(file);
+  };
+
+  const active = isDragging || isResizing;
+
+  return (
+    <div style={{
+      position: "absolute", top: card.y, left: card.x,
+      width: card.w, height: card.h,
+      border: `2px solid ${card.color}`, borderRadius: 6,
+      background: "#fff", overflow: "hidden",
+      boxShadow: active ? "6px 8px 22px rgba(0,0,0,.2)" : "2px 3px 8px rgba(0,0,0,.07)",
+      zIndex: active ? 100 : 1,
+      transition: active ? "none" : "box-shadow .15s",
+    }}>
+      {/* Header — poignée drag */}
+      <div
+        onPointerDown={onDragStart}
+        style={{ background:card.color, padding:"4px 8px 4px 10px", display:"flex", alignItems:"center", gap:6,
+          cursor:isDragging?"grabbing":"grab", userSelect:"none", flexShrink:0, touchAction:"none" }}
+      >
+        <span style={{ color:"rgba(255,255,255,.5)", fontSize:11 }}>⠿</span>
+        <span ref={titleRef} contentEditable suppressContentEditableWarning
+          onBlur={e => onUpdate({ title: e.currentTarget.textContent })}
+          onPointerDown={e => e.stopPropagation()}
+          style={{ flex:1, fontSize:12, fontWeight:700, color:"#fff", outline:"none", cursor:"text" }} />
+        <button onClick={onDelete} onPointerDown={e => e.stopPropagation()}
+          style={{ background:"none", border:"none", color:"rgba(255,255,255,.6)", cursor:"pointer", fontSize:16, padding:"0 3px", lineHeight:1, flexShrink:0 }}>×</button>
+      </div>
+
+      {/* Corps */}
+      <div style={{ padding:"8px 10px", height:"calc(100% - 26px)", overflow:"hidden" }}>
+        {card.type === "image"
+          ? <div
+              onClick={() => { const i=document.createElement("input"); i.type="file"; i.accept="image/*"; i.onchange=e=>loadImg(e.target.files[0]); i.click(); }}
+              onDrop={e => { e.preventDefault(); loadImg(e.dataTransfer.files[0]); }}
+              onDragOver={e => e.preventDefault()}
+              onPointerDown={e => e.stopPropagation()}
+              style={{ width:"100%", height:"100%", cursor:"pointer", borderRadius:4, overflow:"hidden", position:"relative",
+                border:imgSrc?"none":"2px dashed #c4c9d4",
+                background:imgSrc?"#000":"repeating-linear-gradient(45deg,#eee,#eee 2px,#f5f5f3 2px,#f5f5f3 10px)",
+                display:"flex", alignItems:"center", justifyContent:"center" }}
+            >
+              {imgSrc ? <img src={imgSrc} alt="" style={{ width:"100%", height:"100%", objectFit:"cover" }} />
+                      : <div style={{ color:"#aaa", textAlign:"center", fontSize:12, userSelect:"none" }}>📷<br/>Cliquer ou glisser</div>}
+              {imgSrc && <div style={{ position:"absolute", top:4, right:4, background:"rgba(0,0,0,.5)", color:"#fff", fontSize:10, padding:"2px 6px", borderRadius:2, pointerEvents:"none" }}>✎</div>}
+            </div>
+          : <div ref={contentRef} contentEditable suppressContentEditableWarning
+              onBlur={e => onUpdate({ content: e.currentTarget.textContent })}
+              onPointerDown={e => e.stopPropagation()}
+              data-ph="Cliquez pour éditer..."
+              style={{ outline:"none", fontSize:13, lineHeight:1.6, color:"#3a4558", height:"100%", cursor:"text", whiteSpace:"pre-wrap", overflowY:"auto" }} />
+        }
+      </div>
+
+      {/* Poignée de redimensionnement ↘ */}
+      <div
+        onPointerDown={e => { e.stopPropagation(); onResizeStart(e); }}
+        style={{ position:"absolute", bottom:0, right:0, width:22, height:22,
+          cursor:"se-resize", display:"flex", alignItems:"flex-end", justifyContent:"flex-end",
+          padding:"4px", touchAction:"none", zIndex:2 }}
+      >
+        <svg width="9" height="9"><path d="M1 8L8 8L8 1" fill="none" stroke="rgba(0,0,0,.3)" strokeWidth="1.5" strokeLinecap="round"/></svg>
+      </div>
+    </div>
+  );
+};
+
+const MindmapCanvas = ({ sid }) => {
+  const lsKey   = `${sid}_canvas_state`;
+  const counter = useRef(100);
+
+  const [cards, setCards] = useState(() => {
+    try {
+      const saved = localStorage.getItem(lsKey);
+      return saved ? JSON.parse(saved) : CANVAS_DEFAULTS.map(c => ({ ...c }));
+    } catch { return CANVAS_DEFAULTS.map(c => ({ ...c })); }
+  });
+
+  const [dragging, setDragging] = useState(null);
+  const [resizing, setResizing] = useState(null);
+  const containerRef = useRef(null);
+
+  const persist = (list) => { try { localStorage.setItem(lsKey, JSON.stringify(list)); } catch {} };
+
+  const updateCard = (id, updates) => setCards(prev => {
+    const next = prev.map(c => c.id === id ? { ...c, ...updates } : c);
+    persist(next); return next;
+  });
+
+  const deleteCard = (id) => setCards(prev => {
+    const next = prev.filter(c => c.id !== id);
+    persist(next); return next;
+  });
+
+  const addCard = (type) => {
+    const id = `card_${counter.current++}`;
+    const card = {
+      id, type,
+      title: type === "image" ? "Image / Carte" : "Nouveau bloc",
+      color: CARD_COLORS[Math.floor(Math.random() * CARD_COLORS.length)],
+      x: 40 + Math.random() * 280, y: 40 + Math.random() * 80,
+      w: type === "image" ? 220 : 240, h: type === "image" ? 200 : 150,
+      content: "",
+    };
+    setCards(prev => { const next = [...prev, card]; persist(next); return next; });
+  };
+
+  const startDrag = (e, cardId) => {
+    if (!containerRef.current) return;
+    const rect = containerRef.current.getBoundingClientRect();
+    const card = cards.find(c => c.id === cardId);
+    setDragging({
+      cardId,
+      ox: e.clientX - rect.left + containerRef.current.scrollLeft - card.x,
+      oy: e.clientY - rect.top  + containerRef.current.scrollTop  - card.y,
+    });
+    e.preventDefault();
+  };
+
+  const startResize = (e, cardId) => {
+    const card = cards.find(c => c.id === cardId);
+    setResizing({ cardId, startX: e.clientX, startY: e.clientY, startW: card.w, startH: card.h });
+    e.preventDefault();
+  };
+
+  useEffect(() => {
+    const onMove = (e) => {
+      if (dragging && containerRef.current) {
+        const rect = containerRef.current.getBoundingClientRect();
+        const x = Math.max(0, e.clientX - rect.left + containerRef.current.scrollLeft - dragging.ox);
+        const y = Math.max(0, e.clientY - rect.top  + containerRef.current.scrollTop  - dragging.oy);
+        setCards(prev => prev.map(c => c.id === dragging.cardId ? { ...c, x, y } : c));
+      }
+      if (resizing) {
+        const w = Math.max(120, resizing.startW + e.clientX - resizing.startX);
+        const h = Math.max(60,  resizing.startH + e.clientY - resizing.startY);
+        setCards(prev => prev.map(c => c.id === resizing.cardId ? { ...c, w, h } : c));
+      }
+    };
+    const onUp = () => {
+      if (dragging) { setDragging(null); setCards(prev => { persist(prev); return prev; }); }
+      if (resizing) { setResizing(null); setCards(prev => { persist(prev); return prev; }); }
+    };
+    document.addEventListener("pointermove", onMove);
+    document.addEventListener("pointerup",   onUp);
+    return () => { document.removeEventListener("pointermove", onMove); document.removeEventListener("pointerup", onUp); };
+  }, [dragging, resizing]);
+
+  return (
+    <div style={{ display:"flex", flexDirection:"column", flex:1, minHeight:0 }}>
+      {/* Toolbar */}
+      <div style={{ height:46, flexShrink:0, background:"#fff", borderBottom:"1px solid #e2e6ed", display:"flex", alignItems:"center", padding:"0 20px", gap:10 }}>
+        <span style={{ fontSize:13, color:"#8898b0" }}>Glisser les blocs · titre cliquable · scroll pour explorer</span>
+        <div style={{ flex:1 }} />
+        <button onClick={() => addCard("image")} style={{ padding:"5px 14px", background:"#f5f6f9", color:"#5a6880", border:"1px solid #d8dde8", borderRadius:5, cursor:"pointer", fontSize:13 }}>
+          + Image
+        </button>
+        <button onClick={() => addCard("text")} style={{ padding:"5px 14px", background:"#2d60a7", color:"#fff", border:"none", borderRadius:5, cursor:"pointer", fontSize:13 }}>
+          + Bloc texte
+        </button>
+      </div>
+
+      {/* Canvas scrollable */}
+      <div ref={containerRef} style={{ flex:1, minHeight:0, overflow:"auto", position:"relative", background:"#f5f6f9", backgroundImage:"radial-gradient(circle, #c4c9d4 1px, transparent 1px)", backgroundSize:"22px 22px", cursor: dragging ? "grabbing" : resizing ? "se-resize" : "default" }}>
+        <div style={{ width:1600, height:1000, position:"relative" }}>
+          {cards.map(card => (
+            <CanvasCard
+              key={card.id} card={card} sid={sid}
+              onDragStart={e => startDrag(e, card.id)}
+              onResizeStart={e => startResize(e, card.id)}
+              onUpdate={u => updateCard(card.id, u)}
+              onDelete={() => deleteCard(card.id)}
+              isDragging={dragging?.cardId === card.id}
+              isResizing={resizing?.cardId === card.id}
+            />
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ── Quiz (Flashcards) ───────────────────────────────────────────
+
+const QUIZ_DEFAULTS = () => [
+  { id:"q1", question:"Quelles sont les causes principales ?",    answer:"Réponse à renseigner.", known:false },
+  { id:"q2", question:"Quels sont les acteurs clés ?",             answer:"Réponse à renseigner.", known:false },
+  { id:"q3", question:"Quelles sont les conséquences ?",           answer:"Réponse à renseigner.", known:false },
+  { id:"q4", question:"Comment définir le concept central ?",      answer:"Réponse à renseigner.", known:false },
+  { id:"q5", question:"Quelle est la Leitfrage du sous-thème ?",   answer:"Réponse à renseigner.", known:false },
+];
+
+// Champ éditable dans la flashcard — stopPropagation pour ne pas déclencher le flip
+const CardField = ({ storageKey, defaultVal, style, ph }) => {
+  const ref = useRef(null);
+  useEffect(() => {
+    if (!ref.current) return;
+    const saved = localStorage.getItem(storageKey);
+    ref.current.textContent = saved !== null ? saved : (defaultVal || "");
+  }, [storageKey]);
+  return (
+    <div
+      ref={ref}
+      contentEditable suppressContentEditableWarning
+      onClick={e => e.stopPropagation()}
+      onMouseDown={e => e.stopPropagation()}
+      onBlur={e => localStorage.setItem(storageKey, e.currentTarget.textContent)}
+      data-ph={ph || "Cliquez pour éditer..."}
+      style={{ outline:"none", cursor:"text", ...style }}
+    />
+  );
+};
+
+const QuizView = ({ sid }) => {
+  const lsKey  = `${sid}_quiz`;
+  const ctr    = useRef(100);
+
+  const [cards, setCards] = useState(() => {
+    try { const s = localStorage.getItem(lsKey); return s ? JSON.parse(s) : QUIZ_DEFAULTS(); }
+    catch { return QUIZ_DEFAULTS(); }
+  });
+  const [idx,     setIdx]     = useState(0);
+  const [flipped, setFlipped] = useState(false);
+
+  const save = list => { try { localStorage.setItem(lsKey, JSON.stringify(list)); } catch {} };
+
+  const go = dir => { setFlipped(false); setTimeout(() => setIdx(i => Math.max(0, Math.min(cards.length-1, i+dir))), 120); };
+
+  const toggleKnown = () => {
+    const next = cards.map((c,i) => i===idx ? { ...c, known:!c.known } : c);
+    save(next); setCards(next);
+  };
+
+  const addCard = () => {
+    const id = `q_${ctr.current++}`;
+    const next = [...cards, { id, question:"Nouvelle question ?", answer:"Réponse à renseigner.", known:false }];
+    save(next); setCards(next); setIdx(next.length-1); setFlipped(false);
+  };
+
+  const delCard = () => {
+    if (cards.length <= 1) return;
+    const next = cards.filter((_,i) => i !== idx);
+    save(next); setCards(next); setIdx(Math.min(idx, next.length-1)); setFlipped(false);
+  };
+
+  const shuffle = () => {
+    const next = [...cards].sort(() => Math.random()-.5).map(c => ({ ...c, known:false }));
+    save(next); setCards(next); setIdx(0); setFlipped(false);
+  };
+
+  const cur       = cards[Math.min(idx, cards.length-1)];
+  const knownCnt  = cards.filter(c => c.known).length;
+  const pct       = cards.length ? (knownCnt / cards.length) * 100 : 0;
+
+  return (
+    <div style={{ flex:1, display:"flex", flexDirection:"column", background:"#f5f6f9" }}>
+
+      {/* Toolbar */}
+      <div data-np style={{ height:46, flexShrink:0, background:"#fff", borderBottom:"1px solid #e2e6ed", display:"flex", alignItems:"center", padding:"0 20px", gap:12 }}>
+        <span style={{ fontSize:13, fontWeight:600, color:"#2d60a7" }}>{knownCnt} / {cards.length} connus</span>
+        <div style={{ width:90, height:6, background:"#e2e6ed", borderRadius:3, overflow:"hidden" }}>
+          <div style={{ height:"100%", width:`${pct}%`, background:"#2d60a7", borderRadius:3, transition:"width .3s" }} />
+        </div>
+        <div style={{ flex:1 }} />
+        <button onClick={shuffle} style={{ padding:"5px 12px", background:"#f5f6f9", color:"#5a6880", border:"1px solid #d8dde8", borderRadius:5, cursor:"pointer", fontSize:13 }}>🔀 Mélanger</button>
+        <button onClick={addCard} style={{ padding:"5px 14px", background:"#2d60a7", color:"#fff", border:"none", borderRadius:5, cursor:"pointer", fontSize:13 }}>+ Carte</button>
+      </div>
+
+      {/* Deck */}
+      <div style={{ flex:1, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", padding:"28px 24px", gap:22 }}>
+        <div style={{ fontSize:13, color:"#8898b0" }}>{idx+1} / {cards.length}</div>
+
+        {/* Flip card */}
+        <div onClick={() => setFlipped(f => !f)} style={{ width:"100%", maxWidth:640, height:290, perspective:"1400px", cursor:"pointer" }}>
+          <div style={{
+            width:"100%", height:"100%", position:"relative",
+            transformStyle:"preserve-3d",
+            transition:"transform 0.42s cubic-bezier(.4,0,.2,1)",
+            transform: flipped ? "rotateY(180deg)" : "rotateY(0deg)",
+          }}>
+            {/* Recto — Question */}
+            <div style={{
+              position:"absolute", inset:0, backfaceVisibility:"hidden",
+              background:"#fff", borderRadius:12, border:"2px solid #e2e6ed",
+              boxShadow:"0 4px 20px rgba(0,0,0,.07)",
+              display:"flex", flexDirection:"column", padding:"28px 32px",
+            }}>
+              <div style={{ fontSize:11, fontWeight:600, color:"#8898b0", textTransform:"uppercase", letterSpacing:".08em", marginBottom:14 }}>Question</div>
+              <CardField
+                storageKey={`${sid}_q_${cur.id}_q`} defaultVal={cur.question}
+                ph="Rédigez votre question..."
+                style={{ flex:1, fontSize:20, fontWeight:600, color:"#1a2332", lineHeight:1.5 }}
+              />
+              <div style={{ fontSize:12, color:"#c4c9d4", textAlign:"center", marginTop:12 }}>↓ Cliquer pour révéler</div>
+            </div>
+            {/* Verso — Réponse */}
+            <div style={{
+              position:"absolute", inset:0, backfaceVisibility:"hidden",
+              transform:"rotateY(180deg)",
+              background:"#eef4ff", borderRadius:12,
+              border:"2px solid #2d60a7",
+              boxShadow:"0 4px 20px rgba(45,96,167,.13)",
+              display:"flex", flexDirection:"column", padding:"28px 32px",
+            }}>
+              <div style={{ fontSize:11, fontWeight:600, color:"#2d60a7", textTransform:"uppercase", letterSpacing:".08em", marginBottom:14 }}>Réponse</div>
+              <CardField
+                storageKey={`${sid}_q_${cur.id}_a`} defaultVal={cur.answer}
+                ph="Rédigez la réponse..."
+                style={{ flex:1, fontSize:16, color:"#2a3a50", lineHeight:1.7 }}
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Contrôles */}
+        <div style={{ display:"flex", alignItems:"center", gap:12 }}>
+          <button onClick={() => go(-1)} disabled={idx===0}
+            style={{ width:40, height:40, borderRadius:"50%", border:"1px solid #d8dde8", background:idx>0?"#fff":"transparent", cursor:idx>0?"pointer":"default", color:idx>0?"#1a2332":"#d0d5de", fontSize:18 }}>←</button>
+
+          <button onClick={toggleKnown} style={{
+            padding:"8px 20px", borderRadius:8, cursor:"pointer", fontSize:14, fontWeight:600, border:"1px solid",
+            background:cur.known?"#e8f5e9":"#fff3e0",
+            color:cur.known?"#2e7d32":"#e65100",
+            borderColor:cur.known?"#a5d6a7":"#ffcc80",
+          }}>{cur.known ? "✓ Connu" : "✗ À revoir"}</button>
+
+          <button onClick={() => setFlipped(f => !f)}
+            style={{ padding:"8px 22px", borderRadius:8, background:"#2d60a7", color:"#fff", border:"none", cursor:"pointer", fontSize:14, fontWeight:600 }}>
+            Retourner
+          </button>
+
+          <button onClick={() => go(1)} disabled={idx===cards.length-1}
+            style={{ width:40, height:40, borderRadius:"50%", border:"1px solid #d8dde8", background:idx<cards.length-1?"#fff":"transparent", cursor:idx<cards.length-1?"pointer":"default", color:idx<cards.length-1?"#1a2332":"#d0d5de", fontSize:18 }}>→</button>
+
+          <button onClick={delCard} disabled={cards.length<=1}
+            style={{ width:36, height:36, borderRadius:"50%", border:"1px solid #fecaca", background:cards.length>1?"#fff5f5":"transparent", cursor:cards.length>1?"pointer":"default", color:cards.length>1?"#dc2626":"#d0d5de", fontSize:16 }}>×</button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ── Sidebar ──────────────────────────────────────────────────────
+
+// Nom de thème éditable dans la sidebar
+const ThemeLabel = ({ themeId, defaultTitle, open }) => {
+  const ref  = useRef(null);
+  const lsKey = `theme_${themeId}_titre`;
+  useEffect(() => {
+    if (!ref.current) return;
+    ref.current.textContent = localStorage.getItem(lsKey) || defaultTitle;
+  }, [themeId]);
+  return (
+    <span
+      ref={ref}
+      contentEditable suppressContentEditableWarning
+      onClick={e => e.stopPropagation()}
+      onMouseDown={e => e.stopPropagation()}
+      onBlur={e => localStorage.setItem(lsKey, e.currentTarget.textContent)}
+      data-ph="Nom du thème"
+      style={{ flex:1, outline:"none", cursor:"text", color: open ? "#fff" : "#8898b0", fontSize:13.5, fontWeight:600 }}
+    />
+  );
+};
+
+const Sidebar = ({ themes, activePath, onSelect, stTitles }) => {
+  const [expanded, setExpanded] = useState(() => new Set([activePath[0]]));
+
+  const toggle = (id) => setExpanded(prev => {
+    const next = new Set(prev);
+    next.has(id) ? next.delete(id) : next.add(id);
+    return next;
+  });
+
+  return (
+    <aside data-np style={{
+      width: 240, flexShrink: 0,
+      background: "#1d2b42", color: "#e8ecf2",
+      display: "flex", flexDirection: "column", overflowY: "auto",
+    }}>
+      <div style={{ padding: "18px 20px 14px", borderBottom: "1px solid #28395a" }}>
+        <div style={{ fontSize: 15, fontWeight: 700, color: "#fff" }}>DNL</div>
+        <div style={{ fontSize: 12, color: "#6a7f98", marginTop: 2 }}>Geschichte &amp; Géographie</div>
+      </div>
+
+      <div style={{ flex: 1, padding: "8px 0" }}>
+        {themes.map((theme) => {
+          const open = expanded.has(theme.id);
+          return (
+            <div key={theme.id}>
+              {/* Titre de thème : flèche (toggle) + nom éditable */}
+              <div style={{ display:"flex", alignItems:"center", padding:"9px 20px", gap:8 }}>
+                <button
+                  onClick={() => toggle(theme.id)}
+                  style={{ background:"none", border:"none", cursor:"pointer", color: open ? "#fff" : "#6a7f98", padding:0, fontSize:9, flexShrink:0 }}
+                >
+                  {open ? "▼" : "▶"}
+                </button>
+                <ThemeLabel themeId={theme.id} defaultTitle={`Thème ${theme.numero}`} open={open} />
+                <span style={{ fontSize:12, opacity:0.4, color: open ? "#fff" : "#6a7f98", flexShrink:0 }}>{theme.sousThemes.length}</span>
+              </div>
+
+              {open && theme.sousThemes.map((st) => {
+                const active = activePath[0] === theme.id && activePath[1] === st.id;
+                const label  = stTitles?.[st.id] || st.titre;
+                return (
+                  <button key={st.id} onClick={() => onSelect(theme.id, st.id)} style={{
+                    width: "100%", textAlign: "left",
+                    padding: "7px 20px 7px 34px",
+                    background: active ? "#2d60a7" : "none",
+                    border: "none", cursor: "pointer",
+                    borderLeft: active ? "3px solid #74aadf" : "3px solid transparent",
+                    color: active ? "#fff" : "#7a8da4",
+                    fontSize: 13, lineHeight: 1.4,
+                  }}>
+                    <span style={{ marginRight: 6, opacity: 0.4 }}>•</span>
+                    {label}
+                  </button>
+                );
+              })}
+            </div>
+          );
+        })}
+      </div>
+
+      <div style={{ padding: "10px 20px", borderTop: "1px solid #28395a", fontSize: 11, color: "#4a5e78" }}>
+        7 sous-thèmes
+      </div>
+    </aside>
+  );
+};
+
+// ── Écran de connexion ───────────────────────────────────────────
+const LoginScreen = () => {
+  const [email,   setEmail]   = useState("");
+  const [pwd,     setPwd]     = useState("");
+  const [mode,    setMode]    = useState("login");
+  const [err,     setErr]     = useState("");
+  const [msg,     setMsg]     = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const submit = async () => {
+    if (!email || !pwd) return;
+    setLoading(true); setErr(""); setMsg("");
+    const { error } = mode === "login"
+      ? await _sb.auth.signInWithPassword({ email, password: pwd })
+      : await _sb.auth.signUp({ email, password: pwd });
+    if (error) setErr(error.message);
+    else if (mode === "signup") setMsg("Vérifie tes emails pour confirmer ton compte !");
+    setLoading(false);
+  };
+
+  const inp = { padding:"10px 14px", border:"1px solid #d8dde8", borderRadius:6, fontSize:14, outline:"none", fontFamily:"'Plus Jakarta Sans',sans-serif", width:"100%", boxSizing:"border-box" };
+
+  return (
+    <div style={{ height:"100vh", display:"flex", alignItems:"center", justifyContent:"center", background:"#1d2b42", fontFamily:"'Plus Jakarta Sans',sans-serif" }}>
+      <div style={{ background:"#fff", borderRadius:12, padding:"40px 36px", width:"100%", maxWidth:380, boxShadow:"0 20px 60px rgba(0,0,0,.35)" }}>
+        <div style={{ textAlign:"center", marginBottom:28 }}>
+          <div style={{ fontSize:30, fontWeight:700, color:"#1d2b42" }}>DNL</div>
+          <div style={{ fontSize:13, color:"#8898b0", marginTop:4 }}>Geschichte &amp; Géographie · Révision</div>
+        </div>
+        <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
+          <input type="email" value={email} onChange={e => setEmail(e.target.value)}
+            onKeyDown={e => e.key==="Enter" && submit()} placeholder="Adresse email" style={inp} />
+          <input type="password" value={pwd} onChange={e => setPwd(e.target.value)}
+            onKeyDown={e => e.key==="Enter" && submit()} placeholder="Mot de passe (min. 6 caractères)" style={inp} />
+        </div>
+        {err && <div style={{ marginTop:10, fontSize:13, color:"#dc2626", padding:"8px 12px", background:"#fef2f2", borderRadius:4 }}>{err}</div>}
+        {msg && <div style={{ marginTop:10, fontSize:13, color:"#16a34a", padding:"8px 12px", background:"#f0fdf4", borderRadius:4 }}>{msg}</div>}
+        <button onClick={submit} disabled={loading || !email || !pwd} style={{
+          marginTop:14, width:"100%", padding:11,
+          background: (!email||!pwd||loading) ? "#94a3b8" : "#2d60a7",
+          color:"#fff", border:"none", borderRadius:6, fontSize:15, fontWeight:600,
+          cursor: (!email||!pwd||loading) ? "default" : "pointer", fontFamily:"inherit",
+        }}>
+          {loading ? "..." : mode==="login" ? "Se connecter" : "Créer mon compte"}
+        </button>
+        <button onClick={() => { setMode(m => m==="login"?"signup":"login"); setErr(""); setMsg(""); }} style={{
+          marginTop:8, width:"100%", padding:8, background:"none", border:"none",
+          color:"#5a6880", fontSize:13, cursor:"pointer", fontFamily:"inherit",
+        }}>
+          {mode==="login" ? "Pas encore de compte ? S'inscrire" : "Déjà un compte ? Se connecter"}
+        </button>
+      </div>
+    </div>
+  );
+};
+
+// ── App ──────────────────────────────────────────────────────────
+const App = () => {
+  const { isMobile } = useViewport();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  // ── Auth ──────────────────────────────────────────────────
+  const [user,      setUser]      = useState(null);
+  const [authReady, setAuthReady] = useState(false);
+  const [syncing,   setSyncing]   = useState(false);
+
+  useEffect(() => {
+    _sb.auth.getSession().then(async ({ data: { session } }) => {
+      if (session?.user) {
+        _uid = session.user.id;
+        setSyncing(true);
+        await loadUserData(session.user.id).catch(console.warn);
+        setSyncing(false);
+        setUser(session.user);
+      }
+      setAuthReady(true);
+    });
+    const { data: { subscription } } = _sb.auth.onAuthStateChange(async (event, session) => {
+      if (event === "SIGNED_IN" && session?.user) {
+        _uid = session.user.id;
+        setSyncing(true);
+        await loadUserData(session.user.id).catch(console.warn);
+        setSyncing(false);
+        setUser(session.user);
+        setAuthReady(true);
+      } else if (event === "SIGNED_OUT") {
+        _uid = null; setUser(null);
+      }
+    });
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const [activePath, setActivePath] = useState([
+    COURS.themes[0].id,
+    COURS.themes[0].sousThemes[0].id,
+  ]);
+  const [tab, setTab] = useState("dossier");
+
+  const activeTheme = COURS.themes.find((t) => t.id === activePath[0]);
+  const activeST = activeTheme?.sousThemes.find((s) => s.id === activePath[1]);
+
+  // Flat list for prev/next
+  const allSTs = COURS.themes.flatMap((t) =>
+    t.sousThemes.map((st) => ({ themeId: t.id, st }))
+  );
+  const currentIdx = allSTs.findIndex((x) => x.st.id === activePath[1]);
+
+  const [stTitles, setStTitles] = useState(() => {
+    const init = {};
+    COURS.themes.forEach(t => t.sousThemes.forEach(st => {
+      const saved = localStorage.getItem(`${st.id}_titre`);
+      if (saved) init[st.id] = saved;
+    }));
+    return init;
+  });
+
+  const goTo = (idx) => {
+    if (idx < 0 || idx >= allSTs.length) return;
+    setActivePath([allSTs[idx].themeId, allSTs[idx].st.id]);
+  };
+
+  // ── Auth gates ──────────────────────────────────────────────
+  if (!authReady) return (
+    <div style={{ height:"100vh", display:"flex", alignItems:"center", justifyContent:"center", fontFamily:"'Plus Jakarta Sans',sans-serif", color:"#8898b0", fontSize:16 }}>
+      Chargement...
+    </div>
+  );
+  if (!user) return <LoginScreen />;
+  if (syncing) return (
+    <div style={{ height:"100vh", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", gap:12, fontFamily:"'Plus Jakarta Sans',sans-serif", color:"#8898b0" }}>
+      <div style={{ fontSize:32 }}>⟳</div>
+      <div>Synchronisation des données...</div>
+    </div>
+  );
+
+  const TABS = ["dossier", "mindmap", "quiz"];
+
+  return (
+    <div style={{
+      height: "100vh", display: "flex", flexDirection: "column",
+      fontFamily: "'Plus Jakarta Sans', sans-serif", color: "#1a2332",
+    }}>
+      {/* Barre supérieure */}
+      <header data-np style={{
+        height: 52, flexShrink: 0, background: "#fff",
+        borderBottom: "1px solid #e2e6ed",
+        display: "flex", alignItems: "center", padding: "0 24px", gap: 12,
+      }}>
+        <span style={{ fontSize: 16, fontWeight: 700 }}>DNL</span>
+        <div style={{ width: 1, height: 18, background: "#dde1ea" }} />
+        <span style={{ fontSize: 14, color: "#5a6880" }}>Geschichte &amp; Géographie</span>
+        <div style={{ flex: 1 }} />
+        {!isMobile && <span style={{ fontSize: 12, color: "#9aa3b0" }}>{currentIdx + 1} / {allSTs.length}</span>}
+        {!isMobile && <span style={{ fontSize: 12, color: "#8898b0", maxWidth:160, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{user?.email}</span>}
+        {isMobile && (
+          <button onClick={() => setSidebarOpen(o => !o)}
+            style={{ background:"none", border:"none", fontSize:22, cursor:"pointer", color:"#5a6880", padding:"0 4px" }}>☰</button>
+        )}
+        <button onClick={() => window.print()}
+          style={{ padding:"5px 14px", background:"#f5f6f9", color:"#5a6880", border:"1px solid #d8dde8", borderRadius:5, cursor:"pointer", fontSize:13, marginLeft:8 }}>⬇ PDF</button>
+        <button onClick={() => _sb.auth.signOut()} title="Se déconnecter"
+          style={{ padding:"5px 10px", background:"#f5f6f9", color:"#5a6880", border:"1px solid #d8dde8", borderRadius:5, cursor:"pointer", fontSize:15, marginLeft:4 }}>⏻</button>
+      </header>
+
+      <div style={{ flex: 1, display: "flex", overflow: "hidden" }}>
+        {/* Overlay mobile */}
+        {isMobile && sidebarOpen && (
+          <div onClick={() => setSidebarOpen(false)}
+            style={{ position:"fixed", inset:0, background:"rgba(0,0,0,.45)", zIndex:50 }} />
+        )}
+        {/* Sidebar */}
+        <div style={isMobile ? { position:"fixed", top:0, left:0, bottom:0, zIndex:60,
+          transform: sidebarOpen ? "translateX(0)" : "translateX(-100%)",
+          transition: "transform .25s ease" } : {}}>
+          <Sidebar themes={COURS.themes} activePath={activePath}
+            onSelect={(tId, stId) => { setActivePath([tId, stId]); setSidebarOpen(false); }}
+            stTitles={stTitles} />
+        </div>
+
+        <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
+          {/* Fil d'Ariane + onglets */}
+          <div style={{
+            background: "#fff", borderBottom: "1px solid #e2e6ed",
+            padding: "12px 26px 0", flexShrink: 0,
+          }}>
+            <div style={{ fontSize: 12, color: "#8898b0", marginBottom: 8 }}>
+              {activeTheme?.titre} &rsaquo; <span style={{ color: "#2d60a7" }}>{stTitles[activeST?.id] || activeST?.titre}</span>
+            </div>
+            <div data-np style={{ display: "flex", gap: 0 }}>
+              {TABS.map((t) => (
+                <button key={t} onClick={() => setTab(t)} style={{
+                  padding: "7px 20px", background: "none", border: "none",
+                  cursor: "pointer", fontSize: 14,
+                  color: tab === t ? "#2d60a7" : "#8898b0",
+                  fontWeight: tab === t ? 600 : 400,
+                  borderBottom: tab === t ? "2px solid #2d60a7" : "2px solid transparent",
+                  textTransform: "capitalize",
+                }}>
+                  {t.charAt(0).toUpperCase() + t.slice(1)}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Contenu de l'onglet */}
+          <div style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column", overflow: "hidden" }}>
+            {tab === "dossier" && activeST && (
+              <div style={{ flex: 1, overflowY: "auto" }}>
+                <DossierView key={activeST.id} st={activeST} sid={activeST.id}
+                  onTitleChange={title => setStTitles(prev => ({ ...prev, [activeST.id]: title }))}
+                />
+              </div>
+            )}
+            {tab === "mindmap" && activeST && (
+              <MindmapCanvas key={activeST.id} sid={activeST.id} />
+            )}
+            {tab === "quiz" && activeST && (
+              <QuizView key={activeST.id} sid={activeST.id} />
+            )}
+          </div>
+
+          {/* Navigation bas */}
+          <div data-np style={{
+            height: 52, flexShrink: 0, background: "#fff",
+            borderTop: "1px solid #e2e6ed",
+            display: "flex", alignItems: "center",
+            justifyContent: "space-between", padding: "0 26px",
+          }}>
+            <button
+              onClick={() => goTo(currentIdx - 1)}
+              disabled={currentIdx === 0}
+              style={{
+                padding: "6px 16px", borderRadius: 6, border: "1px solid #d8dde8",
+                background: currentIdx > 0 ? "#f5f6f9" : "transparent",
+                color: currentIdx > 0 ? "#1a2332" : "#c4c9d4",
+                cursor: currentIdx > 0 ? "pointer" : "default", fontSize: 14,
+              }}>
+              ← Précédent
+            </button>
+            <span style={{ fontSize: 13, color: "#8898b0" }}>
+              {currentIdx + 1} / {allSTs.length}
+            </span>
+            <button
+              onClick={() => goTo(currentIdx + 1)}
+              disabled={currentIdx === allSTs.length - 1}
+              style={{
+                padding: "6px 18px", borderRadius: 6,
+                border: "1px solid " + (currentIdx < allSTs.length - 1 ? "#2d60a7" : "#d8dde8"),
+                background: currentIdx < allSTs.length - 1 ? "#2d60a7" : "transparent",
+                color: currentIdx < allSTs.length - 1 ? "#fff" : "#c4c9d4",
+                cursor: currentIdx < allSTs.length - 1 ? "pointer" : "default", fontSize: 14,
+              }}>
+              Suivant →
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+</script>
+</body>
+</html>
