@@ -299,201 +299,101 @@ const NumDoc = ({ n, color }) => (
   }}>{n}</span>
 );
 
-// ── Vue Dossier (fiche sous-thème) ───────────────────────────────
+// ── Vue Dossier (juste dissertation + PDF) ───────────────────────
 const DossierView = ({ st, sid, onTitleChange }) => {
   const k = (id) => sid + "_" + id;
-  const { isMobile } = useViewport();
+  const pdfKey = k("pdf");
+  const pdfNameKey = k("pdfname");
+
+  const [pdf, setPdf] = useState(() => {
+    try { return localStorage.getItem(pdfKey) || null; } catch { return null; }
+  });
+  const [pdfName, setPdfName] = useState(() => {
+    try { return localStorage.getItem(pdfNameKey) || ""; } catch { return ""; }
+  });
+  const [dragOver, setDragOver] = useState(false);
+
+  const loadPdf = (file) => {
+    if (!file) return;
+    if (file.type !== "application/pdf" && !file.name.toLowerCase().endsWith(".pdf")) {
+      alert("Merci de déposer un fichier PDF.");
+      return;
+    }
+    const r = new FileReader();
+    r.onload = e => {
+      const data = e.target.result;
+      setPdf(data);
+      setPdfName(file.name);
+      try { localStorage.setItem(pdfKey, data); } catch (err) { alert("PDF trop volumineux pour être stocké."); }
+      try { localStorage.setItem(pdfNameKey, file.name); } catch {}
+    };
+    r.readAsDataURL(file);
+  };
+
+  const clearPdf = () => {
+    setPdf(null); setPdfName("");
+    try { localStorage.removeItem(pdfKey); } catch {}
+    try { localStorage.removeItem(pdfNameKey); } catch {}
+  };
 
   return (
-    <div style={{ display: "flex", flexDirection: "column" }}>
+    <div style={{ display: "flex", flexDirection: "column", padding: "20px 26px", gap: 22 }}>
 
-      {/* ① En-tête : intro + chronologie */}
-      <div style={{
-        display: "flex", flexDirection: isMobile ? "column" : "row",
-        gap: 16, padding: "20px 26px",
-        borderBottom: "1px solid #e2e6ed", background: "#fff",
-      }}>
-        {/* Badge vertical */}
-        <div style={{
-          writingMode: "vertical-rl", transform: "rotate(180deg)",
-          background: "#c96a2a", color: "#fff",
-          fontSize: 10, letterSpacing: "0.14em", textTransform: "uppercase",
-          padding: "8px 5px", borderRadius: 3, flexShrink: 0,
-          display: "flex", alignItems: "center", justifyContent: "center",
-        }}>
-          Dossier {st.numero.split(".")[0]}
-        </div>
-
-        {/* Titre + intro 2 colonnes */}
-        <div style={{ flex: 2 }}>
-          <E
-            defaultVal={st.titre} storageKey={k("titre")} tag="h1"
-            ph="Titre du sous-thème"
-            style={{ fontSize: 22, fontWeight: 700, lineHeight: 1.2, marginBottom: 12 }}
-            onChange={onTitleChange}
-          />
-          <E
-            defaultVal={st.intro} storageKey={k("intro")} tag="p"
-            ph="Introduction..."
-            style={{ fontSize: 13.5, lineHeight: 1.7, color: "#3a4558" }}
-          />
-        </div>
-
-        {/* Chronologie */}
-        <div style={{
-          flex: 1, minWidth: 160,
-          border: "1px dashed #c4c9d4", borderRadius: 4, padding: "12px 14px",
-        }}>
-          <div style={{ fontSize: 11, fontWeight: 600, color: "#8898b0", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 10 }}>
-            Chronologie
-          </div>
-          {st.chronologie.map((item, i) => (
-            <div key={i} style={{ display: "flex", gap: 8, marginBottom: 9, alignItems: "flex-start" }}>
-              <E
-                defaultVal={item.date} storageKey={k("chd" + i)} tag="span"
-                ph="Date" style={{ fontSize: 13, fontWeight: 600, color: "#2d60a7", whiteSpace: "nowrap", flexShrink: 0 }}
-              />
-              <E
-                defaultVal={item.texte} storageKey={k("cht" + i)} tag="span"
-                ph="Événement" style={{ fontSize: 13, color: "#5a6880", lineHeight: 1.5 }}
-              />
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* ② Leitfrage */}
-      <div style={{
-        padding: "10px 26px", borderBottom: "1px solid #e2e6ed",
-        borderLeft: "4px solid #c96a2a", background: "#fdf4ee",
-      }}>
+      {/* En-tête : titre du sous-thème */}
+      <div>
         <E
-          defaultVal={st.leitfrage} storageKey={k("lf")} tag="p"
-          ph="Leitfrage / Problématique..."
-          style={{ fontSize: 15, fontWeight: 600, color: "#c96a2a" }}
+          defaultVal={st.titre} storageKey={k("titre")} tag="h1"
+          ph="Titre du sous-thème"
+          style={{ fontSize: 22, fontWeight: 700, lineHeight: 1.2 }}
+          onChange={onTitleChange}
         />
       </div>
 
-      {/* ③ Documents */}
-      <div style={{ padding: "20px 26px", background: "#f5f6f9", display: "flex", flexDirection: "column", gap: 18 }}>
-
-        {/* Rangée 1 : Doc 1 (img) + Doc 2 (txt) + Doc 3 (img) */}
-        <div style={{ display: "flex", flexDirection: isMobile ? "column" : "row", gap: 18, alignItems: "flex-start" }}>
-
-          {/* Doc 1 */}
-          <div style={{ flex: 2.2, display: "flex", flexDirection: "column", gap: 6 }}>
-            <div style={{ display: "flex", alignItems: "center" }}>
-              <NumDoc n={1} color="#2d60a7" />
-              <E defaultVal={st.docs[0].titre} storageKey={k("d1t")} tag="span"
-                 ph="Titre" style={{ fontSize: 14, fontWeight: 600 }} />
-            </div>
-            <ImgSlot storageKey={k("d1img")} height={145} />
-            <E defaultVal={st.docs[0].source} storageKey={k("d1src")} tag="span"
-               ph="Source..." style={{ fontSize: 11, color: "#8898b0" }} />
-          </div>
-
-          {/* Doc 2 */}
-          <div style={{ flex: 2, display: "flex", flexDirection: "column", gap: 6 }}>
-            <div style={{ display: "flex", alignItems: "center" }}>
-              <NumDoc n={2} color="#c96a2a" />
-              <E defaultVal={st.docs[1].titre} storageKey={k("d2t")} tag="span"
-                 ph="Titre" style={{ fontSize: 14, fontWeight: 600 }} />
-            </div>
-            <div style={{
-              borderLeft: "3px solid #2d60a7", paddingLeft: 12,
-              paddingTop: 10, paddingBottom: 10,
-              background: "#fff", borderRadius: "0 4px 4px 0", minHeight: 110,
-            }}>
-              <E defaultVal={st.docs[1].texte} storageKey={k("d2tx")} tag="p"
-                 ph="Texte du document..." style={{ fontSize: 13, lineHeight: 1.7, color: "#3a4558", fontStyle: "italic" }} />
-            </div>
-            <E defaultVal={st.docs[1].source} storageKey={k("d2src")} tag="span"
-               ph="Source..." style={{ fontSize: 11, color: "#8898b0" }} />
-          </div>
-
-          {/* Doc 3 */}
-          <div style={{ flex: 1.5, display: "flex", flexDirection: "column", gap: 6 }}>
-            <div style={{ display: "flex", alignItems: "center" }}>
-              <NumDoc n={3} color="#2d60a7" />
-              <E defaultVal={st.docs[2].titre} storageKey={k("d3t")} tag="span"
-                 ph="Titre" style={{ fontSize: 14, fontWeight: 600 }} />
-            </div>
-            <ImgSlot storageKey={k("d3img")} height={145} />
-            <E defaultVal={st.docs[2].source} storageKey={k("d3src")} tag="span"
-               ph="Source..." style={{ fontSize: 11, color: "#8898b0" }} />
-          </div>
+      {/* Zone PDF */}
+      <div>
+        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
+          <span style={{ fontSize: 15, fontWeight: 700 }}>📄 Document PDF</span>
+          <div style={{ flex: 1, height: 1, background: "#e2e6ed" }} />
+          {pdf && (
+            <button onClick={clearPdf}
+              style={{ padding:"4px 10px", background:"#f5f6f9", color:"#5a6880", border:"1px solid #d8dde8", borderRadius:5, cursor:"pointer", fontSize:12 }}>
+              Retirer
+            </button>
+          )}
         </div>
 
-        {/* Rangée 2 : Doc 4 (txt) + Doc 5 (img) + Questions */}
-        <div style={{ display: "flex", flexDirection: isMobile ? "column" : "row", gap: 18, alignItems: "flex-start" }}>
-
-          {/* Doc 4 */}
-          <div style={{ flex: 2.2, display: "flex", flexDirection: "column", gap: 6 }}>
-            <div style={{ display: "flex", alignItems: "center" }}>
-              <NumDoc n={4} color="#c96a2a" />
-              <E defaultVal={st.docs[3].titre} storageKey={k("d4t")} tag="span"
-                 ph="Titre" style={{ fontSize: 14, fontWeight: 600 }} />
-            </div>
-            <div style={{
-              borderLeft: "3px solid #2d60a7", paddingLeft: 12,
-              paddingTop: 10, paddingBottom: 10,
-              background: "#fff", borderRadius: "0 4px 4px 0", minHeight: 100,
-            }}>
-              <E defaultVal={st.docs[3].texte} storageKey={k("d4tx")} tag="p"
-                 ph="Texte du document..." style={{ fontSize: 13, lineHeight: 1.7, color: "#3a4558", fontStyle: "italic" }} />
-            </div>
-            <E defaultVal={st.docs[3].source} storageKey={k("d4src")} tag="span"
-               ph="Source..." style={{ fontSize: 11, color: "#8898b0" }} />
-          </div>
-
-          {/* Doc 5 */}
-          <div style={{ flex: 2.8, display: "flex", flexDirection: "column", gap: 6 }}>
-            <div style={{ display: "flex", alignItems: "center" }}>
-              <NumDoc n={5} color="#2d60a7" />
-              <E defaultVal={st.docs[4].titre} storageKey={k("d5t")} tag="span"
-                 ph="Titre" style={{ fontSize: 14, fontWeight: 600 }} />
-            </div>
-            <ImgSlot storageKey={k("d5img")} height={125} />
-            <E defaultVal={st.docs[4].source} storageKey={k("d5src")} tag="span"
-               ph="Source..." style={{ fontSize: 11, color: "#8898b0" }} />
-          </div>
-
-          {/* Panneau Questions */}
-          <div style={{ flex: 1.5 }}>
-            <div style={{
-              background: "#fff", border: "1px solid #d8dde8",
-              borderRadius: 6, padding: "14px 16px",
-            }}>
-              <div style={{ fontSize: 14, fontWeight: 700, color: "#2d60a7", marginBottom: 10, paddingBottom: 8, borderBottom: "1px solid #eaedf5" }}>
-                Questions
+        {pdf ? (
+          <div>
+            <div style={{ fontSize: 12, color: "#8898b0", marginBottom: 6 }}>{pdfName}</div>
+            <object data={pdf} type="application/pdf"
+              style={{ width: "100%", height: 600, border: "1px solid #d8dde8", borderRadius: 4, background:"#fff" }}>
+              <div style={{ padding: 20, textAlign: "center", color: "#8898b0" }}>
+                Impossible d'afficher le PDF. <a href={pdf} download={pdfName || "document.pdf"}>Télécharger</a>
               </div>
-              <div style={{ fontSize: 11, fontWeight: 600, color: "#8898b0", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 8 }}>
-                Analyser
-              </div>
-              {st.questions.analyser.map((q, i) => (
-                <div key={i} style={{ display: "flex", gap: 7, marginBottom: 9, alignItems: "flex-start" }}>
-                  <span style={{ fontSize: 13, fontWeight: 700, color: "#2d60a7", flexShrink: 0, marginTop: 1 }}>{i + 1}.</span>
-                  <E defaultVal={q} storageKey={k("qa" + i)} tag="span"
-                     ph="Question..." style={{ fontSize: 13, color: "#3a4558", lineHeight: 1.5 }} />
-                </div>
-              ))}
-              <div style={{ fontSize: 11, fontWeight: 600, color: "#8898b0", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 8, marginTop: 10 }}>
-                Recherche
-              </div>
-              {st.questions.recherche.map((q, i) => (
-                <div key={i} style={{ display: "flex", gap: 7, marginBottom: 9, alignItems: "flex-start" }}>
-                  <span style={{ fontSize: 13, fontWeight: 700, color: "#2d60a7", flexShrink: 0, marginTop: 1 }}>{st.questions.analyser.length + i + 1}.</span>
-                  <E defaultVal={q} storageKey={k("qr" + i)} tag="span"
-                     ph="Question..." style={{ fontSize: 13, color: "#3a4558", lineHeight: 1.5 }} />
-                </div>
-              ))}
-            </div>
+            </object>
           </div>
-        </div>
+        ) : (
+          <div
+            onClick={() => { const i=document.createElement("input"); i.type="file"; i.accept="application/pdf"; i.onchange=e=>loadPdf(e.target.files[0]); i.click(); }}
+            onDrop={e => { e.preventDefault(); setDragOver(false); loadPdf(e.dataTransfer.files[0]); }}
+            onDragOver={e => { e.preventDefault(); setDragOver(true); }}
+            onDragLeave={() => setDragOver(false)}
+            style={{
+              border: `2px dashed ${dragOver ? "#2d60a7" : "#c4c9d4"}`,
+              borderRadius: 6, padding: "50px 20px", textAlign: "center",
+              background: dragOver ? "#eaf1fb" : "#fafbfc", cursor: "pointer",
+              color: "#5a6880", fontSize: 14, transition: "all .15s",
+            }}
+          >
+            <div style={{ fontSize: 32, marginBottom: 8 }}>📄</div>
+            <div style={{ fontWeight: 600, marginBottom: 4 }}>Glisser un PDF ici</div>
+            <div style={{ fontSize: 12, color: "#8898b0" }}>ou cliquer pour parcourir</div>
+          </div>
+        )}
       </div>
 
-      {/* ④ Dissertation finale */}
-      <div style={{ padding: "20px 26px", borderTop: "2px solid #e2e6ed", background: "#fff" }}>
+      {/* Dissertation finale */}
+      <div style={{ borderTop: "2px solid #e2e6ed", paddingTop: 20 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 14 }}>
           <span style={{ fontSize: 15, fontWeight: 700 }}>✍ Dissertation finale</span>
           <div style={{ flex: 1, height: 1, background: "#e2e6ed" }} />
@@ -509,10 +409,11 @@ const DossierView = ({ st, sid, onTitleChange }) => {
              ph="Sujet de la dissertation..." style={{ fontSize: 14, color: "#1a2332", fontWeight: 500, flex: 1 }} />
         </div>
 
-        {/* Lignes d'écriture */}
-        {[...Array(7)].map((_, i) => (
-          <div key={i} style={{ height: 1, background: "#e6eaf0", marginBottom: 26 }} />
-        ))}
+        <E
+          defaultVal="" storageKey={k("disstxt")} tag="div"
+          ph="Rédiger la dissertation ici..."
+          style={{ fontSize: 14, lineHeight: 1.8, color: "#1a2332", minHeight: 300, padding: "12px 14px", border: "1px solid #e2e6ed", borderRadius: 4, background: "#fff" }}
+        />
       </div>
     </div>
   );
@@ -523,12 +424,12 @@ const DossierView = ({ st, sid, onTitleChange }) => {
 const CARD_COLORS = ["#3b6ea5","#c96a2a","#5b8a3a","#8b4a9a","#2a8a7a","#6b7890","#a04040","#c0983a"];
 
 const CANVAS_DEFAULTS = [
-  { id:"lf",  title:"Leitfrage",          color:"#c96a2a", x:20,  y:20,  w:380, h:90,  type:"text",  content:"Problématique à synthétiser..." },
-  { id:"bg",  title:"Schlüsselbegriffe",  color:"#3b6ea5", x:20,  y:130, w:200, h:220, type:"text",  content:"• Begriff 1\n• Begriff 2\n• Begriff 3" },
-  { id:"map", title:"Karte / Schéma",     color:"#5b8a3a", x:240, y:130, w:200, h:220, type:"image" },
-  { id:"arg", title:"Hauptargumente",     color:"#8b4a9a", x:460, y:20,  w:360, h:330, type:"text",  content:"Argument 1...\n\nArgument 2...\n\nArgument 3..." },
-  { id:"bil", title:"Bilan",              color:"#2a8a7a", x:20,  y:370, w:620, h:90,  type:"text",  content:"Synthèse et conclusion du sous-thème..." },
-  { id:"lnk", title:"Liens entre thèmes", color:"#6b7890", x:660, y:370, w:160, h:90,  type:"text",  content:"↔ Thème 2\n↔ Thème 3" },
+  { id:"lf",  title:"Leitfrage",          color:"#c96a2a", x:20,  y:20,  w:520, h:130, type:"text",  content:"Problématique à synthétiser..." },
+  { id:"bg",  title:"Schlüsselbegriffe",  color:"#3b6ea5", x:20,  y:170, w:280, h:320, type:"text",  content:"• Begriff 1\n• Begriff 2\n• Begriff 3" },
+  { id:"map", title:"Karte / Schéma",     color:"#5b8a3a", x:320, y:170, w:280, h:320, type:"image" },
+  { id:"arg", title:"Hauptargumente",     color:"#8b4a9a", x:620, y:20,  w:480, h:470, type:"text",  content:"Argument 1...\n\nArgument 2...\n\nArgument 3..." },
+  { id:"bil", title:"Bilan",              color:"#2a8a7a", x:20,  y:510, w:820, h:130, type:"text",  content:"Synthèse et conclusion du sous-thème..." },
+  { id:"lnk", title:"Liens entre thèmes", color:"#6b7890", x:860, y:510, w:240, h:130, type:"text",  content:"↔ Thème 2\n↔ Thème 3" },
 ];
 
 const CanvasCard = ({ card, sid, onDragStart, onResizeStart, onUpdate, onDelete, isDragging, isResizing }) => {
@@ -651,7 +552,7 @@ const MindmapCanvas = ({ sid }) => {
       title: type === "image" ? "Image / Carte" : "Nouveau bloc",
       color: CARD_COLORS[Math.floor(Math.random() * CARD_COLORS.length)],
       x: 40 + Math.random() * 280, y: 40 + Math.random() * 80,
-      w: type === "image" ? 220 : 240, h: type === "image" ? 200 : 150,
+      w: type === "image" ? 300 : 340, h: type === "image" ? 260 : 220,
       content: "",
     };
     setCards(prev => { const next = [...prev, card]; persist(next); return next; });
@@ -714,7 +615,7 @@ const MindmapCanvas = ({ sid }) => {
 
       {/* Canvas scrollable */}
       <div ref={containerRef} style={{ flex:1, minHeight:0, overflow:"auto", position:"relative", background:"#f5f6f9", backgroundImage:"radial-gradient(circle, #c4c9d4 1px, transparent 1px)", backgroundSize:"22px 22px", cursor: dragging ? "grabbing" : resizing ? "se-resize" : "default" }}>
-        <div style={{ width:1600, height:1000, position:"relative" }}>
+        <div style={{ width:3000, height:2000, position:"relative" }}>
           {cards.map(card => (
             <CanvasCard
               key={card.id} card={card} sid={sid}
