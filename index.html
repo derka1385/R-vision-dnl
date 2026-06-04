@@ -482,7 +482,11 @@ const PDFPageView = ({ page, pageIdx, annotKey, tool, color, penSize, onRegister
       ctx.globalCompositeOperation = "source-over";
       ctx.fillStyle = color;
       hits.forEach(({ x, y, w: iw, h: ih }) => {
-        ctx.fillRect(x * dpr, (y + ih * 0.08) * dpr, iw * dpr, ih * 0.84 * dpr);
+        // Clipper aux bornes de la sélection : pas de débordement hors du drag
+        const cx1 = Math.max(x, selX1);
+        const cx2 = Math.min(x + iw, selX2);
+        if (cx2 <= cx1) return;
+        ctx.fillRect(cx1 * dpr, (y + ih * 0.08) * dpr, (cx2 - cx1) * dpr, ih * 0.84 * dpr);
       });
     } else { // souligner
       ctx.globalAlpha = 1;
@@ -491,9 +495,12 @@ const PDFPageView = ({ page, pageIdx, annotKey, tool, color, penSize, onRegister
       ctx.lineWidth   = 2 * dpr;
       ctx.lineCap     = "round";
       hits.forEach(({ x, y, w: iw, h: ih }) => {
+        const cx1 = Math.max(x, selX1);
+        const cx2 = Math.min(x + iw, selX2);
+        if (cx2 <= cx1) return;
         ctx.beginPath();
-        ctx.moveTo( x       * dpr, (y + ih) * dpr);
-        ctx.lineTo((x + iw) * dpr, (y + ih) * dpr);
+        ctx.moveTo(cx1 * dpr, (y + ih) * dpr);
+        ctx.lineTo(cx2 * dpr, (y + ih) * dpr);
         ctx.stroke();
       });
     }
