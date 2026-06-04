@@ -241,6 +241,310 @@ const NumDoc = ({ n, color }) => (
 );
 
 // ════════════════════════════════════════════════════════════════
+//  ANNOTATEUR PDF (PDF.js chargé à la demande)
+// ════════════════════════════════════════════════════════════════
+
+const PDFJS_VER    = "3.11.174";
+const PDFJS_CDN    = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${PDFJS_VER}/pdf.min.js`;
+const PDFJS_WORKER = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${PDFJS_VER}/pdf.worker.min.js`;
+
+const loadPDFJS = () => new Promise((resolve, reject) => {
+  if (window.pdfjsLib) { window.pdfjsLib.GlobalWorkerOptions.workerSrc = PDFJS_WORKER; resolve(window.pdfjsLib); return; }
+  const s = document.createElement("script"); s.src = PDFJS_CDN;
+  s.onload = () => { window.pdfjsLib.GlobalWorkerOptions.workerSrc = PDFJS_WORKER; resolve(window.pdfjsLib); };
+  s.onerror = () => reject(new Error("Impossible de charger PDF.js"));
+  document.head.appendChild(s);
+});
+
+// Paramètres des outils d'annotation
+const ANNOT_TOOLS = {
+  stylo:     { label:"✏ Stylo",      wFactor:2,   alpha:1,    comp:"source-over",    cursor:"crosshair", pressure:true  },
+  surligner: { label:"▬ Surligner",  wFactor:14,  alpha:0.38, comp:"source-over",    cursor:"crosshair", pressure:false },
+  souligner: { label:"_ Souligner",  wFactor:1.5, alpha:1,    comp:"source-over",    cursor:"text",      pressure:false },
+  gomme:     { label:"◯ Gomme",      wFactor:8,   alpha:1,    comp:"destination-out",cursor:"cell",      pressure:false },
+};
+const PEN_COLORS  = ["#1a2332","#2454A0","#dc2626","#16a34a","#d97706"];
+const HL_COLORS   = ["#fbbf24","#86efac","#93c5fd","#f9a8d4","#c4b5fd"];
+
+// ── Page PDF avec calque annotation ─────────────────────────────
+const PDFPageView = ({ page, pageIdx, annotKey, tool, color, penSize, onRegister }) => {
+  const pdfRef   = useRef(null);
+  const annotRef = useRef(null);
+  const histRef  = useRef([]);   // historique dataURL pour undo
+  const drawing  = useRef(false);
+  const [ready, setReady] = useState(false);
+
+  // Rendu de la page PDF
+  useEffect(() => {
+    if (!page || !pdfRef.current) return;
+    const viewport = page.getViewport({ scale: 1.5 });
+    const cv = pdfRef.current;
+    cv.width  = Math.floor(viewport.width);
+    cv.height = Math.floor(viewport.height);
+    page.render({ canvasContext: cv.getContext("2d"), viewport })
+        .promise.then(() => setReady(true)).catch(console.warn);
+  }, [page]);
+
+  // Initialise le calque annotation + charge les annotations sauvées
+  useEffect(() => {
+    if (!ready || !annotRef.current || !pdfRef.current) return;
+    const ac = annotRef.current, pc = pdfRef.current;
+    ac.width = pc.width; ac.height = pc.height;
+    const ctx = ac.getContext("2d");
+    ctx.clearRect(0, 0, ac.width, ac.height);
+    const saved = localStorage.getItem(`img_annot_${annotKey}_p${pageIdx}`);
+    const finalize = () => { histRef.current = [ac.toDataURL("image/png")]; };
+    if (saved) {
+      const img = new Image();
+      img.onload  = () => { ctx.drawImage(img, 0, 0); finalize(); };
+      img.onerror = finalize;
+      img.src = saved;
+    } else { finalize(); }
+  }, [ready, annotKey, pageIdx]);
+
+  // Enregistre les fonctions undo/clear accessibles depuis PDFAnnotator
+  useEffect(() => {
+    if (!ready || !annotRef.current) return;
+    onRegister(pageIdx, {
+      undo: () => {
+        if (histRef.current.length <= 1 || !annotRef.current) return false;
+        histRef.current.pop();
+        const prev = histRef.current[histRef.current.length - 1];
+        const ctx = annotRef.current.getContext("2d");
+        ctx.clearRect(0, 0, annotRef.current.width, annotRef.current.height);
+        const img = new Image();
+        img.onload = () => ctx.drawImage(img, 0, 0);
+        img.src = prev;
+        if (histRef.current.length === 1) localStorage.removeItem(`img_annot_${annotKey}_p${pageIdx}`);
+        else localStorage.setItem(`img_annot_${annotKey}_p${pageIdx}`, prev);
+        return true;
+      },
+      clear: () => {
+        if (!annotRef.current) return;
+        const ctx = annotRef.current.getContext("2d");
+        ctx.clearRect(0, 0, annotRef.current.width, annotRef.current.height);
+        histRef.current = [annotRef.current.toDataURL("image/png")];
+        localStorage.removeItem(`img_annot_${annotKey}_p${pageIdx}`);
+      },
+    });
+  }, [ready, annotKey, pageIdx, tool, color, penSize, onRegister]);
+
+  const getPos = (e) => {
+    const ac = annotRef.current;
+    if (!ac) return { x:0, y:0, p:0.5 };
+    const rect = ac.getBoundingClientRect();
+    return {
+      x: (e.clientX - rect.left) * (ac.width / rect.width),
+      y: (e.clientY - rect.top)  * (ac.height / rect.height),
+      p: Math.max(0.05, e.pressure || 0.5),
+    };
+  };
+
+  const applyCtx = (ctx, pressure = 0.5) => {
+    const cfg = ANNOT_TOOLS[tool] || ANNOT_TOOLS.stylo;
+    ctx.lineCap = "round"; ctx.lineJoin = "round";
+    ctx.globalCompositeOperation = cfg.comp;
+    ctx.strokeStyle = tool === "gomme" ? "rgba(0,0,0,1)" : color;
+    ctx.globalAlpha = cfg.alpha;
+    ctx.lineWidth   = penSize * cfg.wFactor * (cfg.pressure ? (0.4 + pressure * 1.4) : 1);
+  };
+
+  const onDown = (e) => {
+    if (!annotRef.current) return;
+    e.preventDefault();
+    try { annotRef.current.setPointerCapture(e.pointerId); } catch {}
+    drawing.current = true;
+    const pos = getPos(e);
+    const ctx = annotRef.current.getContext("2d");
+    applyCtx(ctx, pos.p);
+    ctx.beginPath();
+    ctx.moveTo(pos.x, pos.y);
+  };
+
+  const onMove = (e) => {
+    if (!drawing.current || !annotRef.current) return;
+    e.preventDefault();
+    const pos = getPos(e);
+    const ctx = annotRef.current.getContext("2d");
+    applyCtx(ctx, pos.p);
+    ctx.lineTo(pos.x, pos.y);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(pos.x, pos.y);
+  };
+
+  const onUp = (e) => {
+    if (!drawing.current || !annotRef.current) return;
+    drawing.current = false;
+    const dataURL = annotRef.current.toDataURL("image/png");
+    histRef.current = [...histRef.current, dataURL];
+    localStorage.setItem(`img_annot_${annotKey}_p${pageIdx}`, dataURL);
+  };
+
+  const cfg = ANNOT_TOOLS[tool] || ANNOT_TOOLS.stylo;
+
+  return (
+    <div style={{ position:"relative", marginBottom:10, background:"#fff",
+      boxShadow:"0 2px 10px rgba(0,0,0,.1)", borderRadius:3, overflow:"hidden",
+      userSelect:"none" }}>
+      <div style={{ position:"absolute", top:6, left:8, fontSize:10, color:"rgba(0,0,0,.25)", pointerEvents:"none", zIndex:2 }}>
+        p.{pageIdx+1}
+      </div>
+      <canvas ref={pdfRef} style={{ display:"block", width:"100%" }} />
+      {ready && (
+        <canvas ref={annotRef}
+          style={{ position:"absolute", inset:0, width:"100%", height:"100%",
+            touchAction:"none", cursor:cfg.cursor, zIndex:1 }}
+          onPointerDown={onDown} onPointerMove={onMove}
+          onPointerUp={onUp}    onPointerLeave={onUp}
+        />
+      )}
+    </div>
+  );
+};
+
+// ── Annotateur PDF complet (toolbar + pages) ─────────────────────
+const PDFAnnotator = ({ pdfData, pdfName, annotKey, onRemove }) => {
+  const [pdfPages,    setPdfPages]    = useState([]);
+  const [loading,     setLoading]     = useState(true);
+  const [loadError,   setLoadError]   = useState("");
+  const [tool,        setTool]        = useState("stylo");
+  const [color,       setColor]       = useState(PEN_COLORS[0]);
+  const [penSize,     setPenSize]     = useState(2);
+  const [fullscreen,  setFullscreen]  = useState(false);
+  const pageAPIs = useRef({});
+
+  // Chargement PDF.js + rendu des pages
+  useEffect(() => {
+    if (!pdfData) return;
+    setLoading(true); setLoadError(""); setPdfPages([]);
+    loadPDFJS()
+      .then(lib => lib.getDocument(pdfData).promise)
+      .then(async pdf => {
+        const pages = [];
+        for (let i = 1; i <= pdf.numPages; i++) pages.push(await pdf.getPage(i));
+        setPdfPages(pages); setLoading(false);
+      })
+      .catch(e => { setLoadError("Erreur : " + e.message); setLoading(false); });
+  }, [pdfData]);
+
+  const registerPage = (idx, api) => { pageAPIs.current[idx] = api; };
+
+  const handleUndo = () => {
+    for (let i = pdfPages.length - 1; i >= 0; i--)
+      if (pageAPIs.current[i]?.undo()) break;
+  };
+
+  const handleClearAll = () => {
+    if (!confirm("Effacer toutes les annotations de ce document ?")) return;
+    Object.values(pageAPIs.current).forEach(api => api?.clear());
+  };
+
+  const isHl = tool === "surligner";
+  const colorSet = isHl ? HL_COLORS : PEN_COLORS;
+
+  const handleToolChange = (t) => {
+    setTool(t);
+    if (t === "surligner") setColor(HL_COLORS[0]);
+    else if (t !== "gomme") setColor(PEN_COLORS[0]);
+  };
+
+  const toolbar = (
+    <div style={{ background:"#fff", borderBottom:"1px solid #e2e6ed", padding:"7px 12px",
+      display:"flex", alignItems:"center", gap:7, flexWrap:"wrap", flexShrink:0 }}>
+
+      {/* Outils */}
+      {Object.entries(ANNOT_TOOLS).map(([key, cfg]) => (
+        <button key={key} onClick={() => handleToolChange(key)}
+          style={{ padding:"4px 10px", borderRadius:6,
+            border:`1.5px solid ${tool===key?"#2454A0":"#e2e6ed"}`,
+            background:tool===key?"#eef2fc":"#f8f9fc",
+            color:tool===key?"#2454A0":"#5a6880",
+            cursor:"pointer", fontSize:12, fontWeight:tool===key?700:400,
+            fontFamily:"inherit", transition:"all .12s", whiteSpace:"nowrap" }}>
+          {cfg.label}
+        </button>
+      ))}
+
+      <div style={{ width:1, height:20, background:"#e2e6ed", flexShrink:0 }} />
+
+      {/* Couleurs */}
+      {tool !== "gomme" && colorSet.map(c => (
+        <div key={c} onClick={() => setColor(c)}
+          style={{ width:20, height:20, borderRadius:"50%", background:c, cursor:"pointer", flexShrink:0,
+            outline:`2.5px solid ${color===c?c:"transparent"}`, outlineOffset:2,
+            transform:color===c?"scale(1.18)":"scale(1)", transition:"all .12s" }} />
+      ))}
+
+      <div style={{ width:1, height:20, background:"#e2e6ed", flexShrink:0 }} />
+
+      {/* Épaisseur */}
+      {tool !== "gomme" && [1, 2, 4].map(s => (
+        <div key={s} onClick={() => setPenSize(s)}
+          style={{ width:20+s*2, height:20+s*2, borderRadius:"50%",
+            background:penSize===s?"#2454A0":"#e8ecf2",
+            cursor:"pointer", flexShrink:0, display:"flex", alignItems:"center", justifyContent:"center",
+            transition:"all .12s" }}>
+          <div style={{ width:s*2, height:s*2, borderRadius:"50%", background:penSize===s?"#fff":"#8898b0" }} />
+        </div>
+      ))}
+
+      <div style={{ flex:1 }} />
+
+      {/* Actions */}
+      {[
+        { label:"↩ Annuler", onClick:handleUndo, style:{ border:"1px solid #d8dde8", background:"#f8f9fc", color:"#5a6880" } },
+        { label:"🗑 Effacer tout", onClick:handleClearAll, style:{ border:"1px solid #fecaca", background:"#fff5f5", color:"#dc2626" } },
+        { label:fullscreen?"✕ Réduire":"⤢ Plein écran", onClick:()=>setFullscreen(f=>!f), style:{ border:"1px solid #d8dde8", background:"#f8f9fc", color:"#5a6880" } },
+        ...(onRemove ? [{ label:"Retirer PDF", onClick:onRemove, style:{ border:"1px solid #d8dde8", background:"#f8f9fc", color:"#5a6880" } }] : []),
+      ].map(btn => (
+        <button key={btn.label} onClick={btn.onClick}
+          style={{ padding:"4px 10px", borderRadius:6, cursor:"pointer", fontSize:12, fontFamily:"inherit", ...btn.style }}>
+          {btn.label}
+        </button>
+      ))}
+    </div>
+  );
+
+  const pagesList = (
+    <div style={{ flex:1, overflowY:"auto", padding:"12px 16px", background:"#f0f2f5", minHeight:0 }}>
+      {loading && (
+        <div style={{ textAlign:"center", padding:"60px 20px", color:"#8898b0" }}>
+          <div style={{ fontSize:28, marginBottom:10 }}>⟳</div>
+          <div style={{ fontSize:13 }}>Chargement du PDF…</div>
+          <div style={{ fontSize:11, marginTop:6, color:"#b8c0cc" }}>PDF.js se charge depuis le CDN</div>
+        </div>
+      )}
+      {loadError && (
+        <div style={{ padding:16, background:"#fef2f2", borderRadius:8, color:"#dc2626", fontSize:13 }}>{loadError}</div>
+      )}
+      {!loading && !loadError && pdfPages.map((page, idx) => (
+        <PDFPageView key={idx} page={page} pageIdx={idx}
+          annotKey={annotKey} tool={tool} color={color} penSize={penSize}
+          onRegister={registerPage} />
+      ))}
+    </div>
+  );
+
+  if (fullscreen) {
+    return ReactDOM.createPortal(
+      <div style={{ position:"fixed", inset:0, zIndex:9999, background:"#f0f2f5",
+        display:"flex", flexDirection:"column", fontFamily:"'Plus Jakarta Sans',sans-serif" }}>
+        {toolbar}{pagesList}
+      </div>,
+      document.body
+    );
+  }
+
+  return (
+    <div style={{ border:"1px solid #e2e6ed", borderRadius:8, overflow:"hidden",
+      height:600, display:"flex", flexDirection:"column" }}>
+      {toolbar}{pagesList}
+    </div>
+  );
+};
+
+// ════════════════════════════════════════════════════════════════
 //  VUE DOSSIER
 // ════════════════════════════════════════════════════════════════
 
@@ -253,7 +557,6 @@ const DossierView = ({ st, sid, onTitleChange }) => {
   const [pdf, setPdf] = useState(() => { try { return localStorage.getItem(pdfKey) || null; } catch { return null; } });
   const [pdfName, setPdfName] = useState(() => { try { return localStorage.getItem(pdfNameKey) || ""; } catch { return ""; } });
   const [dragOver, setDragOver] = useState(false);
-  const [pdfFullscreen, setPdfFullscreen] = useState(false);
 
   const loadPdf = (file) => {
     if (!file) return;
@@ -285,26 +588,9 @@ const DossierView = ({ st, sid, onTitleChange }) => {
         <div style={{ display:"flex", alignItems:"center", gap:12, marginBottom:12 }}>
           <span style={{ fontSize:15, fontWeight:700 }}>📄 Document PDF</span>
           <div style={{ flex:1, height:1, background:"#e2e6ed" }} />
-          {pdf && (
-            <>
-              <button onClick={() => setPdfFullscreen(true)}
-                style={{ padding:"4px 10px", background:"#2d60a7", color:"#fff", border:"none", borderRadius:5, cursor:"pointer", fontSize:12 }}>⤢ Plein écran</button>
-              <button onClick={clearPdf}
-                style={{ padding:"4px 10px", background:"#f5f6f9", color:"#5a6880", border:"1px solid #d8dde8", borderRadius:5, cursor:"pointer", fontSize:12 }}>Retirer</button>
-            </>
-          )}
         </div>
-        {pdfFullscreen && pdf && <Lightbox src={pdf} type="pdf" name={pdfName} onClose={() => setPdfFullscreen(false)} />}
         {pdf ? (
-          <div>
-            <div style={{ fontSize:12, color:"#8898b0", marginBottom:6 }}>{pdfName}</div>
-            <object data={pdf} type="application/pdf"
-              style={{ width:"100%", height:isMobile?400:600, border:"1px solid #d8dde8", borderRadius:4, background:"#fff" }}>
-              <div style={{ padding:20, textAlign:"center", color:"#8898b0" }}>
-                Impossible d'afficher le PDF. <a href={pdf} download={pdfName||"document.pdf"}>Télécharger</a>
-              </div>
-            </object>
-          </div>
+          <PDFAnnotator pdfData={pdf} pdfName={pdfName} annotKey={sid} onRemove={clearPdf} />
         ) : (
           <div onClick={() => { const i=document.createElement("input"); i.type="file"; i.accept="application/pdf"; i.onchange=e=>loadPdf(e.target.files[0]); i.click(); }}
             onDrop={e => { e.preventDefault(); setDragOver(false); loadPdf(e.dataTransfer.files[0]); }}
