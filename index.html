@@ -456,9 +456,9 @@ const Lightbox = ({ src, type, name, onClose }) => {
     return () => { document.removeEventListener("keydown", onKey); document.body.style.overflow = ""; };
   }, []);
 
-  return (
+  return ReactDOM.createPortal(
     <div onClick={onClose}
-      style={{ position:"fixed", inset:0, background:"rgba(0,0,0,.93)", zIndex:1000,
+      style={{ position:"fixed", inset:0, background:"rgba(0,0,0,.93)", zIndex:10000,
                display:"flex", alignItems:"center", justifyContent:"center", padding:"50px 20px 20px" }}>
       <button onClick={onClose}
         style={{ position:"absolute", top:14, right:18, background:"rgba(255,255,255,.15)", color:"#fff",
@@ -473,7 +473,8 @@ const Lightbox = ({ src, type, name, onClose }) => {
         : <img src={src} alt="" onClick={e=>e.stopPropagation()}
             style={{ maxWidth:"100%", maxHeight:"100%", objectFit:"contain", borderRadius:4 }} />
       }
-    </div>
+    </div>,
+    document.body
   );
 };
 
