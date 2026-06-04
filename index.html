@@ -9,17 +9,34 @@
   <script>
     // ── Intercepteur localStorage (installé AVANT Babel, sur le vrai window.localStorage) ──
     // Babel isole les réassignations, donc on installe l'intercepteur ici en JS natif.
+    // Cache mémoire : filet de secours quand Safari (5Mo strict) refuse l'écriture.
     (function () {
       const proto = Object.getPrototypeOf(window.localStorage);
       const nativeSet = proto.setItem;
-      window.__origSet = function (k, v) { nativeSet.call(window.localStorage, k, v); };
+      const nativeGet = proto.getItem;
+      const nativeRemove = proto.removeItem;
+      window.__cache = new Map();
+      window.__origSet = function (k, v) {
+        try { nativeSet.call(window.localStorage, k, v); window.__cache.delete(k); }
+        catch (err) { window.__cache.set(k, v); }
+      };
       window.__syncQueue = []; // file d'attente : modifs faites avant le login
       proto.setItem = function (k, v) {
-        nativeSet.call(this, k, v);
+        try { nativeSet.call(this, k, v); window.__cache.delete(k); }
+        catch (err) { window.__cache.set(k, v); }
         if (typeof k !== "string") return;
         if (k.startsWith("sb-") || k.startsWith("supabase.")) return;
         if (window.__syncPush) window.__syncPush(k, v);
         else window.__syncQueue.push([k, v]);
+      };
+      proto.getItem = function (k) {
+        const v = nativeGet.call(this, k);
+        if (v !== null) return v;
+        return window.__cache.has(k) ? window.__cache.get(k) : null;
+      };
+      proto.removeItem = function (k) {
+        nativeRemove.call(this, k);
+        window.__cache.delete(k);
       };
     })();
   </script>
@@ -78,6 +95,7 @@ const _clearLocalData = () => {
     if (k && !k.startsWith("sb-") && !k.startsWith("supabase.")) toDelete.push(k);
   }
   toDelete.forEach(k => localStorage.removeItem(k));
+  if (window.__cache) window.__cache.clear();
 };
 
 // _origSet : écrit sans déclencher la sync (utilisé pour le chargement initial)
