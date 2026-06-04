@@ -267,21 +267,29 @@ const PEN_COLORS  = ["#1a2332","#2454A0","#dc2626","#16a34a","#d97706"];
 const HL_COLORS   = ["#fbbf24","#86efac","#93c5fd","#f9a8d4","#c4b5fd"];
 
 // ── Page PDF avec calque annotation ─────────────────────────────
-const PDFPageView = ({ page, pageIdx, annotKey, tool, color, penSize, onRegister }) => {
+const PDFPageView = ({ page, pageIdx, annotKey, tool, color, penSize, onRegister, editMode }) => {
   const pdfRef   = useRef(null);
   const annotRef = useRef(null);
   const histRef  = useRef([]);   // historique dataURL pour undo
   const drawing  = useRef(false);
   const [ready, setReady] = useState(false);
 
-  // Rendu de la page PDF
+  // Rendu de la page PDF — qualité haute résolution + DPR retina
   useEffect(() => {
     if (!page || !pdfRef.current) return;
-    const viewport = page.getViewport({ scale: 1.5 });
+    const dpr      = window.devicePixelRatio || 1;
+    const SCALE    = 2.5;
+    const viewport = page.getViewport({ scale: SCALE });
     const cv = pdfRef.current;
-    cv.width  = Math.floor(viewport.width);
-    cv.height = Math.floor(viewport.height);
-    page.render({ canvasContext: cv.getContext("2d"), viewport })
+    // Taille physique (pixels écran)
+    cv.width  = Math.floor(viewport.width  * dpr);
+    cv.height = Math.floor(viewport.height * dpr);
+    // Taille CSS (indépendante du DPR)
+    cv.style.width  = `${Math.floor(viewport.width)}px`;
+    cv.style.height = `${Math.floor(viewport.height)}px`;
+    const ctx = cv.getContext("2d");
+    ctx.scale(dpr, dpr);
+    page.render({ canvasContext: ctx, viewport })
         .promise.then(() => setReady(true)).catch(console.warn);
   }, [page]);
 
@@ -289,7 +297,8 @@ const PDFPageView = ({ page, pageIdx, annotKey, tool, color, penSize, onRegister
   useEffect(() => {
     if (!ready || !annotRef.current || !pdfRef.current) return;
     const ac = annotRef.current, pc = pdfRef.current;
-    ac.width = pc.width; ac.height = pc.height;
+    ac.width  = pc.width;  ac.height  = pc.height;
+    ac.style.width  = pc.style.width; ac.style.height = pc.style.height;
     const ctx = ac.getContext("2d");
     ctx.clearRect(0, 0, ac.width, ac.height);
     const saved = localStorage.getItem(`img_annot_${annotKey}_p${pageIdx}`);
@@ -346,7 +355,8 @@ const PDFPageView = ({ page, pageIdx, annotKey, tool, color, penSize, onRegister
     ctx.globalCompositeOperation = cfg.comp;
     ctx.strokeStyle = tool === "gomme" ? "rgba(0,0,0,1)" : color;
     ctx.globalAlpha = cfg.alpha;
-    ctx.lineWidth   = penSize * cfg.wFactor * (cfg.pressure ? (0.4 + pressure * 1.4) : 1);
+    const dpr = window.devicePixelRatio || 1;
+    ctx.lineWidth   = penSize * cfg.wFactor * (cfg.pressure ? (0.4 + pressure * 1.4) : 1) * dpr;
   };
 
   const onDown = (e) => {
@@ -394,9 +404,14 @@ const PDFPageView = ({ page, pageIdx, annotKey, tool, color, penSize, onRegister
       {ready && (
         <canvas ref={annotRef}
           style={{ position:"absolute", inset:0, width:"100%", height:"100%",
-            touchAction:"none", cursor:cfg.cursor, zIndex:1 }}
-          onPointerDown={onDown} onPointerMove={onMove}
-          onPointerUp={onUp}    onPointerLeave={onUp}
+            touchAction: editMode ? "none" : "auto",
+            cursor: editMode ? cfg.cursor : "default",
+            pointerEvents: editMode ? "auto" : "none",
+            zIndex:1 }}
+          onPointerDown={editMode ? onDown : undefined}
+          onPointerMove={editMode ? onMove : undefined}
+          onPointerUp={editMode ? onUp : undefined}
+          onPointerLeave={editMode ? onUp : undefined}
         />
       )}
     </div>
@@ -412,6 +427,7 @@ const PDFAnnotator = ({ pdfData, pdfName, annotKey, onRemove }) => {
   const [color,       setColor]       = useState(PEN_COLORS[0]);
   const [penSize,     setPenSize]     = useState(2);
   const [fullscreen,  setFullscreen]  = useState(false);
+  const [editMode,    setEditMode]    = useState(false);
   const pageAPIs = useRef({});
 
   // Chargement PDF.js + rendu des pages
@@ -453,8 +469,29 @@ const PDFAnnotator = ({ pdfData, pdfName, annotKey, onRemove }) => {
     <div style={{ background:"#fff", borderBottom:"1px solid #e2e6ed", padding:"7px 12px",
       display:"flex", alignItems:"center", gap:7, flexWrap:"wrap", flexShrink:0 }}>
 
-      {/* Outils */}
-      {Object.entries(ANNOT_TOOLS).map(([key, cfg]) => (
+      {/* Toggle Visualiser / Annoter */}
+      <div style={{ display:"flex", border:"1.5px solid #e2e6ed", borderRadius:8, overflow:"hidden", flexShrink:0 }}>
+        <button onClick={() => setEditMode(false)}
+          style={{ padding:"5px 13px", background:!editMode?"#1d2b42":"#f8f9fc",
+            color:!editMode?"#fff":"#5a6880", border:"none", cursor:"pointer",
+            fontSize:12, fontFamily:"inherit", fontWeight:!editMode?700:400,
+            transition:"all .15s", whiteSpace:"nowrap" }}>
+          👁 Visualiser
+        </button>
+        <button onClick={() => setEditMode(true)}
+          style={{ padding:"5px 13px", background:editMode?"#2454A0":"#f8f9fc",
+            color:editMode?"#fff":"#5a6880", border:"none", cursor:"pointer",
+            fontSize:12, fontFamily:"inherit", fontWeight:editMode?700:400,
+            transition:"all .15s", whiteSpace:"nowrap" }}>
+          ✏ Annoter
+        </button>
+      </div>
+
+      {/* Séparateur */}
+      {editMode && <div style={{ width:1, height:20, background:"#e2e6ed", flexShrink:0 }} />}
+
+      {/* Outils — visibles seulement en mode annotation */}
+      {editMode && Object.entries(ANNOT_TOOLS).map(([key, cfg]) => (
         <button key={key} onClick={() => handleToolChange(key)}
           style={{ padding:"4px 10px", borderRadius:6,
             border:`1.5px solid ${tool===key?"#2454A0":"#e2e6ed"}`,
@@ -466,20 +503,20 @@ const PDFAnnotator = ({ pdfData, pdfName, annotKey, onRemove }) => {
         </button>
       ))}
 
-      <div style={{ width:1, height:20, background:"#e2e6ed", flexShrink:0 }} />
+      {editMode && <div style={{ width:1, height:20, background:"#e2e6ed", flexShrink:0 }} />}
 
       {/* Couleurs */}
-      {tool !== "gomme" && colorSet.map(c => (
+      {editMode && tool !== "gomme" && colorSet.map(c => (
         <div key={c} onClick={() => setColor(c)}
           style={{ width:20, height:20, borderRadius:"50%", background:c, cursor:"pointer", flexShrink:0,
             outline:`2.5px solid ${color===c?c:"transparent"}`, outlineOffset:2,
             transform:color===c?"scale(1.18)":"scale(1)", transition:"all .12s" }} />
       ))}
 
-      <div style={{ width:1, height:20, background:"#e2e6ed", flexShrink:0 }} />
+      {editMode && tool !== "gomme" && <div style={{ width:1, height:20, background:"#e2e6ed", flexShrink:0 }} />}
 
       {/* Épaisseur */}
-      {tool !== "gomme" && [1, 2, 4].map(s => (
+      {editMode && tool !== "gomme" && [1, 2, 4].map(s => (
         <div key={s} onClick={() => setPenSize(s)}
           style={{ width:20+s*2, height:20+s*2, borderRadius:"50%",
             background:penSize===s?"#2454A0":"#e8ecf2",
@@ -491,18 +528,33 @@ const PDFAnnotator = ({ pdfData, pdfName, annotKey, onRemove }) => {
 
       <div style={{ flex:1 }} />
 
-      {/* Actions */}
-      {[
-        { label:"↩ Annuler", onClick:handleUndo, style:{ border:"1px solid #d8dde8", background:"#f8f9fc", color:"#5a6880" } },
-        { label:"🗑 Effacer tout", onClick:handleClearAll, style:{ border:"1px solid #fecaca", background:"#fff5f5", color:"#dc2626" } },
-        { label:fullscreen?"✕ Réduire":"⤢ Plein écran", onClick:()=>setFullscreen(f=>!f), style:{ border:"1px solid #d8dde8", background:"#f8f9fc", color:"#5a6880" } },
-        ...(onRemove ? [{ label:"Retirer PDF", onClick:onRemove, style:{ border:"1px solid #d8dde8", background:"#f8f9fc", color:"#5a6880" } }] : []),
-      ].map(btn => (
-        <button key={btn.label} onClick={btn.onClick}
-          style={{ padding:"4px 10px", borderRadius:6, cursor:"pointer", fontSize:12, fontFamily:"inherit", ...btn.style }}>
-          {btn.label}
+      {/* Undo / Clear — seulement en mode annotation */}
+      {editMode && <>
+        <button onClick={handleUndo}
+          style={{ padding:"4px 10px", borderRadius:6, border:"1px solid #d8dde8",
+            background:"#f8f9fc", color:"#5a6880", cursor:"pointer", fontSize:12, fontFamily:"inherit" }}>
+          ↩ Annuler
         </button>
-      ))}
+        <button onClick={handleClearAll}
+          style={{ padding:"4px 10px", borderRadius:6, border:"1px solid #fecaca",
+            background:"#fff5f5", color:"#dc2626", cursor:"pointer", fontSize:12, fontFamily:"inherit" }}>
+          🗑 Effacer tout
+        </button>
+      </>}
+
+      {/* Plein écran + Retirer — toujours visibles */}
+      <button onClick={() => setFullscreen(f=>!f)}
+        style={{ padding:"4px 10px", borderRadius:6, border:"1px solid #d8dde8",
+          background:"#f8f9fc", color:"#5a6880", cursor:"pointer", fontSize:12, fontFamily:"inherit" }}>
+        {fullscreen ? "✕ Réduire" : "⤢ Plein écran"}
+      </button>
+      {onRemove && (
+        <button onClick={onRemove}
+          style={{ padding:"4px 10px", borderRadius:6, border:"1px solid #d8dde8",
+            background:"#f8f9fc", color:"#5a6880", cursor:"pointer", fontSize:12, fontFamily:"inherit" }}>
+          Retirer PDF
+        </button>
+      )}
     </div>
   );
 
@@ -521,7 +573,7 @@ const PDFAnnotator = ({ pdfData, pdfName, annotKey, onRemove }) => {
       {!loading && !loadError && pdfPages.map((page, idx) => (
         <PDFPageView key={idx} page={page} pageIdx={idx}
           annotKey={annotKey} tool={tool} color={color} penSize={penSize}
-          onRegister={registerPage} />
+          onRegister={registerPage} editMode={editMode} />
       ))}
     </div>
   );
