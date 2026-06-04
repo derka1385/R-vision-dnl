@@ -560,7 +560,8 @@ const CanvasCard = ({ card, sid, onDragStart, onResizeStart, onUpdate, onDelete,
       {/* Corps */}
       <div style={{ padding:card.type === "image" ? 0 : "8px 10px", height:"calc(100% - 26px)", overflow:"hidden" }}>
         {card.type === "image"
-          ? <div
+          ? <>
+            <div
               onClick={() => { const i=document.createElement("input"); i.type="file"; i.accept="image/*"; i.onchange=e=>loadImg(e.target.files[0]); i.click(); }}
               onDrop={e => { e.preventDefault(); loadImg(e.dataTransfer.files[0]); }}
               onDragOver={e => e.preventDefault()}
@@ -583,6 +584,7 @@ const CanvasCard = ({ card, sid, onDragStart, onResizeStart, onUpdate, onDelete,
               </>}
             </div>
             {lightbox && imgSrc && <Lightbox src={imgSrc} type="image" onClose={() => setLightbox(false)} />}
+            </>
           : <div ref={contentRef} contentEditable suppressContentEditableWarning
               onBlur={e => onUpdate({ content: e.currentTarget.textContent })}
               onPointerDown={e => e.stopPropagation()}
