@@ -55,6 +55,14 @@
     ::-webkit-scrollbar { width: 5px; }
     ::-webkit-scrollbar-track { background: transparent; }
     ::-webkit-scrollbar-thumb { background: #cdd2dc; border-radius: 3px; }
+
+    /* Calque texte PDF.js */
+    .pdf-tl span {
+      color: transparent; position: absolute; white-space: pre;
+      cursor: text; transform-origin: 0% 0%; line-height: 1;
+    }
+    .pdf-tl span::selection { background: rgba(36,84,160,.3); color: transparent; }
+    .pdf-tl mark { background: rgba(255,220,0,.35); color: transparent; }
     aside::-webkit-scrollbar-thumb { background: #3a4e68; }
 
     @keyframes blob1 {
@@ -258,47 +266,73 @@ const loadPDFJS = () => new Promise((resolve, reject) => {
 
 // Paramètres des outils d'annotation
 const ANNOT_TOOLS = {
-  stylo:     { label:"✏ Stylo",      wFactor:2,   alpha:1,    comp:"source-over",    cursor:"crosshair", pressure:true  },
-  surligner: { label:"▬ Surligner",  wFactor:14,  alpha:0.38, comp:"source-over",    cursor:"crosshair", pressure:false },
-  souligner: { label:"_ Souligner",  wFactor:1.5, alpha:1,    comp:"source-over",    cursor:"text",      pressure:false },
-  gomme:     { label:"◯ Gomme",      wFactor:8,   alpha:1,    comp:"destination-out",cursor:"cell",      pressure:false },
+  stylo:     { label:"✏ Stylo",      wFactor:2,   alpha:1,    comp:"source-over",    cursor:"crosshair", pressure:true,  mode:"draw" },
+  surligner: { label:"▬ Surligner",  wFactor:14,  alpha:0.38, comp:"source-over",    cursor:"text",      pressure:false, mode:"text" },
+  souligner: { label:"_ Souligner",  wFactor:1.5, alpha:1,    comp:"source-over",    cursor:"text",      pressure:false, mode:"text" },
+  gomme:     { label:"◯ Gomme",      wFactor:8,   alpha:1,    comp:"destination-out",cursor:"cell",      pressure:false, mode:"draw" },
 };
 const PEN_COLORS  = ["#1a2332","#2454A0","#dc2626","#16a34a","#d97706"];
 const HL_COLORS   = ["#fbbf24","#86efac","#93c5fd","#f9a8d4","#c4b5fd"];
 
 // ── Page PDF avec calque annotation ─────────────────────────────
 const PDFPageView = ({ page, pageIdx, annotKey, tool, color, penSize, onRegister, editMode }) => {
-  const pdfRef   = useRef(null);
-  const annotRef = useRef(null);
-  const histRef  = useRef([]);   // historique dataURL pour undo
-  const drawing  = useRef(false);
+  const pdfRef       = useRef(null);
+  const annotRef     = useRef(null);
+  const textLayerRef = useRef(null);
+  const histRef      = useRef([]);
+  const drawing      = useRef(false);
   const [ready, setReady] = useState(false);
 
-  // Rendu de la page PDF — qualité haute résolution + DPR retina
+  const isTextTool    = editMode && ANNOT_TOOLS[tool]?.mode === "text";
+  const isFreehand    = editMode && ANNOT_TOOLS[tool]?.mode === "draw";
+  const cfg           = ANNOT_TOOLS[tool] || ANNOT_TOOLS.stylo;
+
+  // ── Rendu PDF haute résolution + calque texte ──────────────────
   useEffect(() => {
     if (!page || !pdfRef.current) return;
-    const dpr      = window.devicePixelRatio || 1;
-    const SCALE    = 2.5;
-    const viewport = page.getViewport({ scale: SCALE });
-    const cv = pdfRef.current;
-    // Taille physique (pixels écran)
-    cv.width  = Math.floor(viewport.width  * dpr);
-    cv.height = Math.floor(viewport.height * dpr);
-    // Taille CSS (indépendante du DPR)
-    cv.style.width  = `${Math.floor(viewport.width)}px`;
-    cv.style.height = `${Math.floor(viewport.height)}px`;
+    const dpr  = window.devicePixelRatio || 1;
+    const SCALE = 2.5;
+    const vp   = page.getViewport({ scale: SCALE });
+    const cv   = pdfRef.current;
+
+    // Canvas physique : haute résolution
+    cv.width  = Math.floor(vp.width  * dpr);
+    cv.height = Math.floor(vp.height * dpr);
+    // Affichage CSS : 100% du conteneur (pas de largeur fixe)
+    cv.style.width  = "100%";
+    cv.style.height = "auto";
+
     const ctx = cv.getContext("2d");
     ctx.scale(dpr, dpr);
-    page.render({ canvasContext: ctx, viewport })
-        .promise.then(() => setReady(true)).catch(console.warn);
+    page.render({ canvasContext: ctx, viewport: vp }).promise
+      .then(() => {
+        setReady(true);
+        // Calque texte pour sélection (surligner / souligner)
+        if (!textLayerRef.current || !window.pdfjsLib) return;
+        const tl = textLayerRef.current;
+        tl.innerHTML = "";
+        // Positionner le calque texte à l'échelle CSS d'affichage
+        const dispW = cv.getBoundingClientRect().width || vp.width;
+        const ratio = dispW / vp.width;
+        tl.style.width  = `${Math.floor(vp.width)}px`;
+        tl.style.height = `${Math.floor(vp.height)}px`;
+        tl.style.transform = `scale(${ratio})`;
+        page.getTextContent()
+          .then(tc => window.pdfjsLib.renderTextLayer({
+            textContentSource: tc, container: tl, viewport: vp, textDivs: []
+          }))
+          .catch(() => {});
+      })
+      .catch(console.warn);
   }, [page]);
 
-  // Initialise le calque annotation + charge les annotations sauvées
+  // ── Init calque annotation + chargement annotations sauvées ────
   useEffect(() => {
     if (!ready || !annotRef.current || !pdfRef.current) return;
     const ac = annotRef.current, pc = pdfRef.current;
     ac.width  = pc.width;  ac.height  = pc.height;
-    ac.style.width  = pc.style.width; ac.style.height = pc.style.height;
+    // Annotation canvas : même taille CSS que le canvas PDF
+    ac.style.width  = "100%"; ac.style.height = "100%";
     const ctx = ac.getContext("2d");
     ctx.clearRect(0, 0, ac.width, ac.height);
     const saved = localStorage.getItem(`img_annot_${annotKey}_p${pageIdx}`);
@@ -311,7 +345,7 @@ const PDFPageView = ({ page, pageIdx, annotKey, tool, color, penSize, onRegister
     } else { finalize(); }
   }, [ready, annotKey, pageIdx]);
 
-  // Enregistre les fonctions undo/clear accessibles depuis PDFAnnotator
+  // ── API undo/clear ─────────────────────────────────────────────
   useEffect(() => {
     if (!ready || !annotRef.current) return;
     onRegister(pageIdx, {
@@ -321,9 +355,7 @@ const PDFPageView = ({ page, pageIdx, annotKey, tool, color, penSize, onRegister
         const prev = histRef.current[histRef.current.length - 1];
         const ctx = annotRef.current.getContext("2d");
         ctx.clearRect(0, 0, annotRef.current.width, annotRef.current.height);
-        const img = new Image();
-        img.onload = () => ctx.drawImage(img, 0, 0);
-        img.src = prev;
+        const img = new Image(); img.onload = () => ctx.drawImage(img, 0, 0); img.src = prev;
         if (histRef.current.length === 1) localStorage.removeItem(`img_annot_${annotKey}_p${pageIdx}`);
         else localStorage.setItem(`img_annot_${annotKey}_p${pageIdx}`, prev);
         return true;
@@ -338,6 +370,7 @@ const PDFPageView = ({ page, pageIdx, annotKey, tool, color, penSize, onRegister
     });
   }, [ready, annotKey, pageIdx, tool, color, penSize, onRegister]);
 
+  // ── Dessin libre (stylo / gomme) ───────────────────────────────
   const getPos = (e) => {
     const ac = annotRef.current;
     if (!ac) return { x:0, y:0, p:0.5 };
@@ -350,12 +383,11 @@ const PDFPageView = ({ page, pageIdx, annotKey, tool, color, penSize, onRegister
   };
 
   const applyCtx = (ctx, pressure = 0.5) => {
-    const cfg = ANNOT_TOOLS[tool] || ANNOT_TOOLS.stylo;
+    const dpr = window.devicePixelRatio || 1;
     ctx.lineCap = "round"; ctx.lineJoin = "round";
     ctx.globalCompositeOperation = cfg.comp;
     ctx.strokeStyle = tool === "gomme" ? "rgba(0,0,0,1)" : color;
     ctx.globalAlpha = cfg.alpha;
-    const dpr = window.devicePixelRatio || 1;
     ctx.lineWidth   = penSize * cfg.wFactor * (cfg.pressure ? (0.4 + pressure * 1.4) : 1) * dpr;
   };
 
@@ -367,8 +399,7 @@ const PDFPageView = ({ page, pageIdx, annotKey, tool, color, penSize, onRegister
     const pos = getPos(e);
     const ctx = annotRef.current.getContext("2d");
     applyCtx(ctx, pos.p);
-    ctx.beginPath();
-    ctx.moveTo(pos.x, pos.y);
+    ctx.beginPath(); ctx.moveTo(pos.x, pos.y);
   };
 
   const onMove = (e) => {
@@ -377,10 +408,8 @@ const PDFPageView = ({ page, pageIdx, annotKey, tool, color, penSize, onRegister
     const pos = getPos(e);
     const ctx = annotRef.current.getContext("2d");
     applyCtx(ctx, pos.p);
-    ctx.lineTo(pos.x, pos.y);
-    ctx.stroke();
-    ctx.beginPath();
-    ctx.moveTo(pos.x, pos.y);
+    ctx.lineTo(pos.x, pos.y); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(pos.x, pos.y);
   };
 
   const onUp = (e) => {
@@ -391,27 +420,86 @@ const PDFPageView = ({ page, pageIdx, annotKey, tool, color, penSize, onRegister
     localStorage.setItem(`img_annot_${annotKey}_p${pageIdx}`, dataURL);
   };
 
-  const cfg = ANNOT_TOOLS[tool] || ANNOT_TOOLS.stylo;
+  // ── Annotation par sélection texte (surligner / souligner) ─────
+  const applyTextSel = () => {
+    if (!pdfRef.current || !annotRef.current) return;
+    const sel = window.getSelection();
+    if (!sel || sel.isCollapsed) return;
+
+    const cvRect = pdfRef.current.getBoundingClientRect();
+    const scX = pdfRef.current.width  / cvRect.width;
+    const scY = pdfRef.current.height / cvRect.height;
+    const dpr = window.devicePixelRatio || 1;
+    const ctx = annotRef.current.getContext("2d");
+    ctx.save();
+
+    for (let r = 0; r < sel.rangeCount; r++) {
+      const rects = sel.getRangeAt(r).getClientRects();
+      for (const rect of rects) {
+        if (rect.width < 2 || rect.height < 2) continue;
+        const x = (rect.left - cvRect.left) * scX;
+        const y = (rect.top  - cvRect.top)  * scY;
+        const w = rect.width  * scX;
+        const h = rect.height * scY;
+
+        if (tool === "surligner") {
+          ctx.globalAlpha = 0.4;
+          ctx.globalCompositeOperation = "source-over";
+          ctx.fillStyle = color;
+          ctx.fillRect(x, y, w, h);
+        } else { // souligner
+          ctx.globalAlpha = 1;
+          ctx.globalCompositeOperation = "source-over";
+          ctx.strokeStyle = color;
+          ctx.lineWidth = Math.max(1.5, h * 0.06) * dpr;
+          ctx.lineCap = "round";
+          ctx.beginPath();
+          ctx.moveTo(x, y + h - dpr); ctx.lineTo(x + w, y + h - dpr);
+          ctx.stroke();
+        }
+      }
+    }
+    ctx.restore();
+    sel.removeAllRanges();
+
+    const dataURL = annotRef.current.toDataURL("image/png");
+    histRef.current = [...histRef.current, dataURL];
+    localStorage.setItem(`img_annot_${annotKey}_p${pageIdx}`, dataURL);
+  };
 
   return (
     <div style={{ position:"relative", marginBottom:10, background:"#fff",
-      boxShadow:"0 2px 10px rgba(0,0,0,.1)", borderRadius:3, overflow:"hidden",
-      userSelect:"none" }}>
-      <div style={{ position:"absolute", top:6, left:8, fontSize:10, color:"rgba(0,0,0,.25)", pointerEvents:"none", zIndex:2 }}>
+      boxShadow:"0 2px 10px rgba(0,0,0,.1)", borderRadius:3, overflow:"hidden" }}>
+      <div style={{ position:"absolute", top:6, left:8, fontSize:10,
+        color:"rgba(0,0,0,.25)", pointerEvents:"none", zIndex:4 }}>
         p.{pageIdx+1}
       </div>
-      <canvas ref={pdfRef} style={{ display:"block", width:"100%" }} />
+
+      {/* Canvas PDF haute résolution — affiché à 100% de largeur */}
+      <canvas ref={pdfRef} style={{ display:"block", width:"100%", height:"auto" }} />
+
+      {/* Calque texte PDF.js — activé en mode surligner/souligner */}
+      <div ref={textLayerRef} className="pdf-tl"
+        style={{ position:"absolute", top:0, left:0, overflow:"hidden", transformOrigin:"top left",
+          pointerEvents: isTextTool ? "auto" : "none",
+          userSelect:    isTextTool ? "text"  : "none",
+          zIndex: isTextTool ? 3 : 1 }}
+        onMouseUp={isTextTool ? applyTextSel : undefined}
+        onTouchEnd={isTextTool ? applyTextSel : undefined}
+      />
+
+      {/* Canvas annotation libre — activé en mode stylo/gomme */}
       {ready && (
         <canvas ref={annotRef}
           style={{ position:"absolute", inset:0, width:"100%", height:"100%",
-            touchAction: editMode ? "none" : "auto",
-            cursor: editMode ? cfg.cursor : "default",
-            pointerEvents: editMode ? "auto" : "none",
-            zIndex:1 }}
-          onPointerDown={editMode ? onDown : undefined}
-          onPointerMove={editMode ? onMove : undefined}
-          onPointerUp={editMode ? onUp : undefined}
-          onPointerLeave={editMode ? onUp : undefined}
+            touchAction:   isFreehand ? "none"     : "auto",
+            cursor:        isFreehand ? cfg.cursor  : "default",
+            pointerEvents: isFreehand ? "auto"      : "none",
+            zIndex: 2 }}
+          onPointerDown={isFreehand ? onDown : undefined}
+          onPointerMove={isFreehand ? onMove : undefined}
+          onPointerUp={isFreehand ? onUp : undefined}
+          onPointerLeave={isFreehand ? onUp : undefined}
         />
       )}
     </div>
