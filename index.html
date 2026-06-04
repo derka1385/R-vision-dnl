@@ -60,8 +60,10 @@
     .pdf-tl span {
       color: transparent; position: absolute; white-space: pre;
       cursor: text; transform-origin: 0% 0%; line-height: 1;
+      user-select: text; -webkit-user-select: text;
     }
     .pdf-tl span::selection { background: rgba(36,84,160,.3); color: transparent; }
+    .pdf-tl br { display: none; }
     .pdf-tl mark { background: rgba(255,220,0,.35); color: transparent; }
     aside::-webkit-scrollbar-thumb { background: #3a4e68; }
 
@@ -307,21 +309,25 @@ const PDFPageView = ({ page, pageIdx, annotKey, tool, color, penSize, onRegister
     page.render({ canvasContext: ctx, viewport: vp }).promise
       .then(() => {
         setReady(true);
-        // Calque texte pour sélection (surligner / souligner)
         if (!textLayerRef.current || !window.pdfjsLib) return;
-        const tl = textLayerRef.current;
-        tl.innerHTML = "";
-        // Positionner le calque texte à l'échelle CSS d'affichage
-        const dispW = cv.getBoundingClientRect().width || vp.width;
-        const ratio = dispW / vp.width;
-        tl.style.width  = `${Math.floor(vp.width)}px`;
-        tl.style.height = `${Math.floor(vp.height)}px`;
-        tl.style.transform = `scale(${ratio})`;
-        page.getTextContent()
-          .then(tc => window.pdfjsLib.renderTextLayer({
-            textContentSource: tc, container: tl, viewport: vp, textDivs: []
-          }))
-          .catch(() => {});
+        // RAF : layout CSS terminé → getBoundingClientRect fiable
+        requestAnimationFrame(() => {
+          const tl = textLayerRef.current;
+          if (!tl || !cv) return;
+          const dispW = cv.getBoundingClientRect().width;
+          if (!dispW) return;
+          // Viewport à l'échelle d'affichage réelle (pas de transform CSS)
+          const nat  = page.getViewport({ scale: 1 });
+          const tlVP = page.getViewport({ scale: dispW / nat.width });
+          tl.innerHTML = "";
+          tl.style.width  = `${Math.floor(tlVP.width)}px`;
+          tl.style.height = `${Math.floor(tlVP.height)}px`;
+          page.getTextContent()
+            .then(tc => window.pdfjsLib.renderTextLayer({
+              textContentSource: tc, container: tl, viewport: tlVP, textDivs: []
+            }))
+            .catch(() => {});
+        });
       })
       .catch(console.warn);
   }, [page]);
@@ -422,9 +428,15 @@ const PDFPageView = ({ page, pageIdx, annotKey, tool, color, penSize, onRegister
 
   // ── Annotation par sélection texte (surligner / souligner) ─────
   const applyTextSel = () => {
-    if (!pdfRef.current || !annotRef.current) return;
+    if (!pdfRef.current || !annotRef.current || !textLayerRef.current) return;
     const sel = window.getSelection();
-    if (!sel || sel.isCollapsed) return;
+    if (!sel || sel.isCollapsed || sel.rangeCount === 0) return;
+
+    // Ignorer si la sélection n'est pas dans ce calque texte
+    try {
+      const range = sel.getRangeAt(0);
+      if (!textLayerRef.current.contains(range.commonAncestorContainer)) return;
+    } catch { return; }
 
     const cvRect = pdfRef.current.getBoundingClientRect();
     const scX = pdfRef.current.width  / cvRect.width;
@@ -432,6 +444,7 @@ const PDFPageView = ({ page, pageIdx, annotKey, tool, color, penSize, onRegister
     const dpr = window.devicePixelRatio || 1;
     const ctx = annotRef.current.getContext("2d");
     ctx.save();
+    let drew = false;
 
     for (let r = 0; r < sel.rangeCount; r++) {
       const rects = sel.getRangeAt(r).getClientRects();
@@ -441,6 +454,8 @@ const PDFPageView = ({ page, pageIdx, annotKey, tool, color, penSize, onRegister
         const y = (rect.top  - cvRect.top)  * scY;
         const w = rect.width  * scX;
         const h = rect.height * scY;
+        if (x < 0 || y < 0) continue;
+        drew = true;
 
         if (tool === "surligner") {
           ctx.globalAlpha = 0.4;
@@ -462,10 +477,27 @@ const PDFPageView = ({ page, pageIdx, annotKey, tool, color, penSize, onRegister
     ctx.restore();
     sel.removeAllRanges();
 
+    if (!drew) return;
     const dataURL = annotRef.current.toDataURL("image/png");
     histRef.current = [...histRef.current, dataURL];
     localStorage.setItem(`img_annot_${annotKey}_p${pageIdx}`, dataURL);
   };
+
+  // Ref stable pour le listener document (évite les closures périmées)
+  const applyTextSelRef = useRef(null);
+  applyTextSelRef.current = applyTextSel;
+
+  // Listener au niveau document : capte le mouseup même hors du div
+  useEffect(() => {
+    if (!isTextTool) return;
+    const handler = () => { setTimeout(() => applyTextSelRef.current?.(), 20); };
+    document.addEventListener("mouseup",  handler);
+    document.addEventListener("touchend", handler);
+    return () => {
+      document.removeEventListener("mouseup",  handler);
+      document.removeEventListener("touchend", handler);
+    };
+  }, [isTextTool]);
 
   return (
     <div style={{ position:"relative", marginBottom:10, background:"#fff",
@@ -480,12 +512,11 @@ const PDFPageView = ({ page, pageIdx, annotKey, tool, color, penSize, onRegister
 
       {/* Calque texte PDF.js — activé en mode surligner/souligner */}
       <div ref={textLayerRef} className="pdf-tl"
-        style={{ position:"absolute", top:0, left:0, overflow:"hidden", transformOrigin:"top left",
+        style={{ position:"absolute", top:0, left:0,
           pointerEvents: isTextTool ? "auto" : "none",
           userSelect:    isTextTool ? "text"  : "none",
+          WebkitUserSelect: isTextTool ? "text" : "none",
           zIndex: isTextTool ? 3 : 1 }}
-        onMouseUp={isTextTool ? applyTextSel : undefined}
-        onTouchEnd={isTextTool ? applyTextSel : undefined}
       />
 
       {/* Canvas annotation libre — activé en mode stylo/gomme */}
