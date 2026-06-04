@@ -688,7 +688,7 @@ const PDFAnnotator = ({ pdfData, pdfName, annotKey, onRemove }) => {
   );
 
   const pagesList = (
-    <div ref={containerRef} style={{ flex:1, overflowY:"auto", padding:"12px 16px", background:"#f0f2f5", minHeight:0 }}>
+    <div ref={containerRef} style={{ flex:1, overflowY:"auto", overflowX:"auto", padding:"12px 16px", background:"#f0f2f5", minHeight:0 }}>
       {loading && (
         <div style={{ textAlign:"center", padding:"60px 20px", color:"#8898b0" }}>
           <div style={{ fontSize:28, marginBottom:10 }}>⟳</div>
@@ -700,7 +700,7 @@ const PDFAnnotator = ({ pdfData, pdfName, annotKey, onRemove }) => {
         <div style={{ padding:16, background:"#fef2f2", borderRadius:8, color:"#dc2626", fontSize:13 }}>{loadError}</div>
       )}
       {!loading && !loadError && (
-        <div style={{ zoom: zoom, transformOrigin:"top center" }}>
+        <div style={{ width:`${Math.round(zoom * 100)}%`, minWidth:"30%", margin:"0 auto" }}>
           {pdfPages.map((page, idx) => (
             <PDFPageView key={idx} page={page} pageIdx={idx}
               annotKey={annotKey} tool={tool} color={color} penSize={penSize}
