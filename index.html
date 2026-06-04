@@ -259,51 +259,76 @@ const loadPDFJS = () => new Promise((resolve, reject) => {
 
 // Paramètres des outils d'annotation
 const ANNOT_TOOLS = {
-  stylo: { label:"✏ Stylo", wFactor:2, alpha:1, comp:"source-over",    cursor:"crosshair", pressure:true  },
-  gomme: { label:"◯ Gomme", wFactor:8, alpha:1, comp:"destination-out",cursor:"cell",      pressure:false },
+  stylo:     { label:"✏ Stylo",     wFactor:2, alpha:1, comp:"source-over",    cursor:"crosshair", pressure:true                },
+  surligner: { label:"▬ Surligner", alpha:0.38,          comp:"source-over",    cursor:"crosshair",               mode:"rect"   },
+  souligner: { label:"_ Souligner", alpha:1,              comp:"source-over",    cursor:"crosshair",               mode:"rect"   },
+  gomme:     { label:"◯ Gomme",     wFactor:8, alpha:1, comp:"destination-out",cursor:"cell",      pressure:false               },
 };
 const PEN_COLORS = ["#1a2332","#2454A0","#dc2626","#16a34a","#d97706"];
+const HL_COLORS  = ["#fbbf24","#86efac","#93c5fd","#f9a8d4","#c4b5fd"];
 
 // ── Page PDF avec calque annotation ─────────────────────────────
 const PDFPageView = ({ page, pageIdx, annotKey, tool, color, penSize, onRegister, editMode }) => {
-  const pdfRef   = useRef(null);
-  const annotRef = useRef(null);
-  const histRef  = useRef([]);
-  const drawing  = useRef(false);
+  const pdfRef     = useRef(null);
+  const annotRef   = useRef(null);
+  const previewRef = useRef(null);  // preview de sélection pour surligner/souligner
+  const vpRef      = useRef(null);  // viewport stocké pour conversion coords
+  const textItems  = useRef([]);    // bounding boxes texte en coords viewport
+  const histRef    = useRef([]);
+  const drawing    = useRef(false);
+  const selStart   = useRef(null);  // point de départ pour sélection rect
   const [ready, setReady] = useState(false);
 
-  const isFreehand = editMode;
+  const isRectTool = editMode && ANNOT_TOOLS[tool]?.mode === "rect";
+  const isFreehand = editMode && !isRectTool;
   const cfg        = ANNOT_TOOLS[tool] || ANNOT_TOOLS.stylo;
 
-  // ── Rendu PDF haute résolution ─────────────────────────────────
+  // ── Rendu PDF haute résolution + chargement positions texte ─────
   useEffect(() => {
     if (!page || !pdfRef.current) return;
-    const dpr  = window.devicePixelRatio || 1;
+    const dpr   = window.devicePixelRatio || 1;
     const SCALE = 2.5;
-    const vp   = page.getViewport({ scale: SCALE });
-    const cv   = pdfRef.current;
-
-    // Canvas physique : haute résolution
+    const vp    = page.getViewport({ scale: SCALE });
+    vpRef.current = vp;
+    const cv    = pdfRef.current;
     cv.width  = Math.floor(vp.width  * dpr);
     cv.height = Math.floor(vp.height * dpr);
-    // Affichage CSS : 100% du conteneur (pas de largeur fixe)
     cv.style.width  = "100%";
     cv.style.height = "auto";
-
     const ctx = cv.getContext("2d");
     ctx.scale(dpr, dpr);
     page.render({ canvasContext: ctx, viewport: vp }).promise
-      .then(() => setReady(true))
+      .then(() => {
+        setReady(true);
+        // Charger les bounding boxes de chaque mot pour la détection texte
+        if (!window.pdfjsLib?.Util) return;
+        page.getTextContent().then(tc => {
+          const Util = window.pdfjsLib.Util;
+          textItems.current = tc.items
+            .filter(item => item.str?.trim())
+            .map(item => {
+              const tx = Util.transform(vp.transform, item.transform);
+              // tx[4],tx[5] = origine (baseline gauche) en pixels viewport
+              // tx[3] = -fontSize en pixels viewport (Y flipped)
+              const fontH = Math.abs(tx[3]) || 12;
+              // item.width en unités texte × tx[0] = pixels viewport
+              const w = Math.abs(item.width * tx[0]) || fontH * 0.55;
+              return { x: tx[4], y: tx[5] - fontH, w: Math.max(1, w), h: fontH };
+            });
+        }).catch(() => {});
+      })
       .catch(console.warn);
   }, [page]);
 
-  // ── Init calque annotation + chargement annotations sauvées ────
+  // ── Init calques annotation + preview ──────────────────────────
   useEffect(() => {
     if (!ready || !annotRef.current || !pdfRef.current) return;
-    const ac = annotRef.current, pc = pdfRef.current;
-    ac.width  = pc.width;  ac.height  = pc.height;
-    // Annotation canvas : même taille CSS que le canvas PDF
-    ac.style.width  = "100%"; ac.style.height = "100%";
+    const pc = pdfRef.current;
+    [annotRef.current, previewRef.current].filter(Boolean).forEach(c => {
+      c.width = pc.width; c.height = pc.height;
+      c.style.width = "100%"; c.style.height = "100%";
+    });
+    const ac = annotRef.current;
     const ctx = ac.getContext("2d");
     ctx.clearRect(0, 0, ac.width, ac.height);
     const saved = localStorage.getItem(`img_annot_${annotKey}_p${pageIdx}`);
@@ -391,6 +416,93 @@ const PDFPageView = ({ page, pageIdx, annotKey, tool, color, penSize, onRegister
     localStorage.setItem(`img_annot_${annotKey}_p${pageIdx}`, dataURL);
   };
 
+  // ── Sélection rectangulaire + détection texte (surligner/souligner) ──
+  const getVPPos = (e) => {
+    const cv = pdfRef.current, vp = vpRef.current;
+    if (!cv || !vp) return { x:0, y:0 };
+    const rect = cv.getBoundingClientRect();
+    return {
+      x: (e.clientX - rect.left) * vp.width  / rect.width,
+      y: (e.clientY - rect.top)  * vp.height / rect.height,
+    };
+  };
+
+  const onRectDown = (e) => {
+    e.preventDefault();
+    try { previewRef.current?.setPointerCapture(e.pointerId); } catch {}
+    selStart.current = getVPPos(e);
+  };
+
+  const onRectMove = (e) => {
+    if (!selStart.current || !previewRef.current) return;
+    e.preventDefault();
+    const dpr = window.devicePixelRatio || 1;
+    const pos = getVPPos(e);
+    const ctx = previewRef.current.getContext("2d");
+    ctx.clearRect(0, 0, previewRef.current.width, previewRef.current.height);
+    const x1 = Math.min(selStart.current.x, pos.x) * dpr;
+    const y1 = Math.min(selStart.current.y, pos.y) * dpr;
+    const w  = Math.abs(pos.x - selStart.current.x) * dpr;
+    const h  = Math.abs(pos.y - selStart.current.y) * dpr;
+    ctx.save();
+    ctx.globalAlpha = 0.15; ctx.fillStyle = color;
+    ctx.fillRect(x1, y1, w, h);
+    ctx.globalAlpha = 0.7;  ctx.strokeStyle = color;
+    ctx.lineWidth = 1.5 * dpr; ctx.setLineDash([5*dpr, 3*dpr]);
+    ctx.strokeRect(x1, y1, w, h);
+    ctx.restore();
+  };
+
+  const onRectUp = (e) => {
+    if (!selStart.current || !annotRef.current || !previewRef.current) return;
+    previewRef.current.getContext("2d")
+      .clearRect(0, 0, previewRef.current.width, previewRef.current.height);
+
+    const pos   = getVPPos(e);
+    const dpr   = window.devicePixelRatio || 1;
+    const selX1 = Math.min(selStart.current.x, pos.x);
+    const selY1 = Math.min(selStart.current.y, pos.y);
+    const selX2 = Math.max(selStart.current.x, pos.x);
+    const selY2 = Math.max(selStart.current.y, pos.y);
+    selStart.current = null;
+
+    // Trouver les mots qui intersectent la sélection
+    const hits = textItems.current.filter(item => {
+      const tol = item.h * 0.4;
+      return item.x      < selX2 && item.x + item.w > selX1
+          && item.y      < selY2 + tol
+          && item.y + item.h > selY1 - tol;
+    });
+    if (!hits.length) return;
+
+    const ctx = annotRef.current.getContext("2d");
+    ctx.save();
+    if (tool === "surligner") {
+      ctx.globalAlpha = 0.38;
+      ctx.globalCompositeOperation = "source-over";
+      ctx.fillStyle = color;
+      hits.forEach(({ x, y, w: iw, h: ih }) => {
+        ctx.fillRect(x * dpr, (y + ih * 0.08) * dpr, iw * dpr, ih * 0.84 * dpr);
+      });
+    } else { // souligner
+      ctx.globalAlpha = 1;
+      ctx.globalCompositeOperation = "source-over";
+      ctx.strokeStyle = color;
+      ctx.lineWidth   = 2 * dpr;
+      ctx.lineCap     = "round";
+      hits.forEach(({ x, y, w: iw, h: ih }) => {
+        ctx.beginPath();
+        ctx.moveTo( x       * dpr, (y + ih) * dpr);
+        ctx.lineTo((x + iw) * dpr, (y + ih) * dpr);
+        ctx.stroke();
+      });
+    }
+    ctx.restore();
+
+    const dataURL = annotRef.current.toDataURL("image/png");
+    histRef.current = [...histRef.current, dataURL];
+    localStorage.setItem(`img_annot_${annotKey}_p${pageIdx}`, dataURL);
+  };
 
   return (
     <div style={{ position:"relative", marginBottom:10, background:"#fff",
@@ -399,22 +511,31 @@ const PDFPageView = ({ page, pageIdx, annotKey, tool, color, penSize, onRegister
         color:"rgba(0,0,0,.25)", pointerEvents:"none", zIndex:4 }}>
         p.{pageIdx+1}
       </div>
-
-      {/* Canvas PDF haute résolution — affiché à 100% de largeur */}
       <canvas ref={pdfRef} style={{ display:"block", width:"100%", height:"auto" }} />
-
-      {/* Canvas annotation */}
       {ready && (
         <canvas ref={annotRef}
           style={{ position:"absolute", inset:0, width:"100%", height:"100%",
-            touchAction:   isFreehand ? "none"     : "auto",
-            cursor:        isFreehand ? cfg.cursor  : "default",
-            pointerEvents: isFreehand ? "auto"      : "none",
-            zIndex: 2 }}
+            touchAction:   isFreehand ? "none"    : "auto",
+            cursor:        isFreehand ? cfg.cursor : "default",
+            pointerEvents: isFreehand ? "auto"     : "none",
+            zIndex: 1 }}
           onPointerDown={isFreehand ? onDown : undefined}
           onPointerMove={isFreehand ? onMove : undefined}
           onPointerUp={isFreehand ? onUp : undefined}
           onPointerLeave={isFreehand ? onUp : undefined}
+        />
+      )}
+      {ready && (
+        <canvas ref={previewRef}
+          style={{ position:"absolute", inset:0, width:"100%", height:"100%",
+            touchAction:   isRectTool ? "none"       : "auto",
+            cursor:        isRectTool ? "crosshair"  : "default",
+            pointerEvents: isRectTool ? "auto"       : "none",
+            zIndex: 2 }}
+          onPointerDown={isRectTool ? onRectDown : undefined}
+          onPointerMove={isRectTool ? onRectMove : undefined}
+          onPointerUp={isRectTool ? onRectUp : undefined}
+          onPointerLeave={isRectTool ? onRectUp : undefined}
         />
       )}
     </div>
@@ -459,9 +580,13 @@ const PDFAnnotator = ({ pdfData, pdfName, annotKey, onRemove }) => {
     Object.values(pageAPIs.current).forEach(api => api?.clear());
   };
 
+  const isHl      = tool === "surligner";
+  const colorSet  = isHl ? HL_COLORS : PEN_COLORS;
+
   const handleToolChange = (t) => {
     setTool(t);
-    if (t !== "gomme") setColor(PEN_COLORS[0]);
+    if      (t === "surligner") setColor(HL_COLORS[0]);
+    else if (t !== "gomme")     setColor(PEN_COLORS[0]);
   };
 
   const toolbar = (
@@ -505,7 +630,7 @@ const PDFAnnotator = ({ pdfData, pdfName, annotKey, onRemove }) => {
       {editMode && <div style={{ width:1, height:20, background:"#e2e6ed", flexShrink:0 }} />}
 
       {/* Couleurs */}
-      {editMode && tool !== "gomme" && PEN_COLORS.map(c => (
+      {editMode && tool !== "gomme" && colorSet.map(c => (
         <div key={c} onClick={() => setColor(c)}
           style={{ width:20, height:20, borderRadius:"50%", background:c, cursor:"pointer", flexShrink:0,
             outline:`2.5px solid ${color===c?c:"transparent"}`, outlineOffset:2,
