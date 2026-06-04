@@ -273,7 +273,6 @@ const PDFPageView = ({ page, pageIdx, annotKey, tool, color, penSize, onRegister
   const annotRef   = useRef(null);
   const previewRef = useRef(null);  // preview de sélection pour surligner/souligner
   const vpRef      = useRef(null);  // viewport stocké pour conversion coords
-  const textItems  = useRef([]);    // bounding boxes texte en coords viewport
   const histRef    = useRef([]);
   const drawing    = useRef(false);
   const selStart   = useRef(null);  // point de départ pour sélection rect
@@ -300,33 +299,6 @@ const PDFPageView = ({ page, pageIdx, annotKey, tool, color, penSize, onRegister
     page.render({ canvasContext: ctx, viewport: vp }).promise
       .then(() => {
         setReady(true);
-        // Découper chaque item texte en mots individuels avec leur bbox
-        if (!window.pdfjsLib?.Util) return;
-        page.getTextContent().then(tc => {
-          const Util = window.pdfjsLib.Util;
-          const wordBoxes = [];
-          for (const item of tc.items) {
-            if (!item.str?.trim()) continue;
-            const tx    = Util.transform(vp.transform, item.transform);
-            const fontH = Math.abs(tx[3]) || 12;
-            const totalW = Math.abs(item.width * tx[0]) || fontH * 0.55;
-            const str    = item.str;
-            const avgCharW = totalW / (str.length || 1);
-            let charIdx  = 0;
-            // Séparer en mots (garder les espaces pour avancer charIdx)
-            for (const part of str.split(/(\s+)/)) {
-              if (!part.trim()) { charIdx += part.length; continue; }
-              wordBoxes.push({
-                x: tx[4] + charIdx * avgCharW,
-                y: tx[5] - fontH,
-                w: Math.max(1, part.length * avgCharW),
-                h: fontH,
-              });
-              charIdx += part.length;
-            }
-          }
-          textItems.current = wordBoxes;
-        }).catch(() => {});
       })
       .catch(console.warn);
   }, [page]);
@@ -469,22 +441,14 @@ const PDFPageView = ({ page, pageIdx, annotKey, tool, color, penSize, onRegister
     previewRef.current.getContext("2d")
       .clearRect(0, 0, previewRef.current.width, previewRef.current.height);
 
-    const pos   = getVPPos(e);
-    const dpr   = window.devicePixelRatio || 1;
-    const selX1 = Math.min(selStart.current.x, pos.x);
-    const selY1 = Math.min(selStart.current.y, pos.y);
-    const selX2 = Math.max(selStart.current.x, pos.x);
-    const selY2 = Math.max(selStart.current.y, pos.y);
+    const pos = getVPPos(e);
+    const dpr = window.devicePixelRatio || 1;
+    const x   = Math.min(selStart.current.x, pos.x) * dpr;
+    const y   = Math.min(selStart.current.y, pos.y) * dpr;
+    const w   = Math.abs(pos.x - selStart.current.x) * dpr;
+    const h   = Math.abs(pos.y - selStart.current.y) * dpr;
     selStart.current = null;
-
-    // Trouver les mots qui intersectent la sélection
-    const hits = textItems.current.filter(item => {
-      const tol = item.h * 0.4;
-      return item.x      < selX2 && item.x + item.w > selX1
-          && item.y      < selY2 + tol
-          && item.y + item.h > selY1 - tol;
-    });
-    if (!hits.length) return;
+    if (w < 2 || h < 2) return;
 
     const ctx = annotRef.current.getContext("2d");
     ctx.save();
@@ -492,22 +456,17 @@ const PDFPageView = ({ page, pageIdx, annotKey, tool, color, penSize, onRegister
       ctx.globalAlpha = 0.38;
       ctx.globalCompositeOperation = "source-over";
       ctx.fillStyle = color;
-      hits.forEach(({ x, y, w: iw, h: ih }) => {
-        // Mot entier surligné (pas de clipping — le mot est l'unité minimale)
-        ctx.fillRect(x * dpr, (y + ih * 0.08) * dpr, iw * dpr, ih * 0.84 * dpr);
-      });
-    } else { // souligner
+      ctx.fillRect(x, y, w, h);
+    } else { // souligner : ligne en bas du rectangle
       ctx.globalAlpha = 1;
       ctx.globalCompositeOperation = "source-over";
       ctx.strokeStyle = color;
-      ctx.lineWidth   = 2 * dpr;
+      ctx.lineWidth   = 2.5 * dpr;
       ctx.lineCap     = "round";
-      hits.forEach(({ x, y, w: iw, h: ih }) => {
-        ctx.beginPath();
-        ctx.moveTo( x        * dpr, (y + ih) * dpr);
-        ctx.lineTo((x + iw)  * dpr, (y + ih) * dpr);
-        ctx.stroke();
-      });
+      ctx.beginPath();
+      ctx.moveTo(x,     y + h);
+      ctx.lineTo(x + w, y + h);
+      ctx.stroke();
     }
     ctx.restore();
 
