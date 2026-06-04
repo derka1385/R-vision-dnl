@@ -505,25 +505,29 @@ const CanvasCard = ({ card, sid, onDragStart, onResizeStart, onUpdate, onDelete,
     r.onload = e => {
       const probe = new Image();
       probe.onload = () => {
-        // Compression : max 1400px sur le plus grand côté, JPEG qualité 0.85
-        const MAX = 1400;
-        const scale = Math.min(1, MAX / Math.max(probe.naturalWidth, probe.naturalHeight));
-        const cw = Math.round(probe.naturalWidth  * scale);
-        const ch = Math.round(probe.naturalHeight * scale);
-        const canvas = document.createElement("canvas");
-        canvas.width = cw; canvas.height = ch;
-        const ctx = canvas.getContext("2d");
-        ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, cw, ch); // fond blanc pour PNG transparents
-        ctx.drawImage(probe, 0, 0, cw, ch);
-        const compressed = canvas.toDataURL("image/jpeg", 0.85);
-        const ratio = cw / ch;
-        setImgSrc(compressed);
-        try {
-          localStorage.setItem(imgKey, compressed);
-          onUpdate({ imgRatio: ratio, h: Math.max(80, Math.round(card.w / ratio)) });
-        } catch (err) {
-          alert("Image encore trop volumineuse après compression. Choisis une image plus petite.");
+        const compress = (maxDim, quality) => {
+          const scale = Math.min(1, maxDim / Math.max(probe.naturalWidth, probe.naturalHeight));
+          const cw = Math.round(probe.naturalWidth  * scale);
+          const ch = Math.round(probe.naturalHeight * scale);
+          const canvas = document.createElement("canvas");
+          canvas.width = cw; canvas.height = ch;
+          const ctx = canvas.getContext("2d");
+          ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, cw, ch);
+          ctx.drawImage(probe, 0, 0, cw, ch);
+          return { data: canvas.toDataURL("image/jpeg", quality), cw, ch };
+        };
+        // Tentatives progressives : du meilleur au plus comprimé
+        const attempts = [[1400, 0.85], [1100, 0.80], [850, 0.75], [650, 0.70], [500, 0.65]];
+        for (const [max, q] of attempts) {
+          const { data, cw, ch } = compress(max, q);
+          try {
+            localStorage.setItem(imgKey, data);
+            setImgSrc(data);
+            onUpdate({ imgRatio: cw / ch, h: Math.max(80, Math.round(card.w / (cw / ch)) + 26) });
+            return;
+          } catch (err) { /* on essaie plus petit */ }
         }
+        alert("Espace de stockage saturé. Supprime quelques images ou le PDF du dossier, puis réessaie.");
       };
       probe.src = e.target.result;
     };
