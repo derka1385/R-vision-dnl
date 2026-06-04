@@ -313,6 +313,7 @@ const DossierView = ({ st, sid, onTitleChange }) => {
     try { return localStorage.getItem(pdfNameKey) || ""; } catch { return ""; }
   });
   const [dragOver, setDragOver] = useState(false);
+  const [pdfFullscreen, setPdfFullscreen] = useState(false);
 
   const loadPdf = (file) => {
     if (!file) return;
@@ -356,12 +357,20 @@ const DossierView = ({ st, sid, onTitleChange }) => {
           <span style={{ fontSize: 15, fontWeight: 700 }}>📄 Document PDF</span>
           <div style={{ flex: 1, height: 1, background: "#e2e6ed" }} />
           {pdf && (
-            <button onClick={clearPdf}
-              style={{ padding:"4px 10px", background:"#f5f6f9", color:"#5a6880", border:"1px solid #d8dde8", borderRadius:5, cursor:"pointer", fontSize:12 }}>
-              Retirer
-            </button>
+            <>
+              <button onClick={() => setPdfFullscreen(true)}
+                style={{ padding:"4px 10px", background:"#2d60a7", color:"#fff", border:"none", borderRadius:5, cursor:"pointer", fontSize:12 }}>
+                ⤢ Plein écran
+              </button>
+              <button onClick={clearPdf}
+                style={{ padding:"4px 10px", background:"#f5f6f9", color:"#5a6880", border:"1px solid #d8dde8", borderRadius:5, cursor:"pointer", fontSize:12 }}>
+                Retirer
+              </button>
+            </>
           )}
         </div>
+
+        {pdfFullscreen && pdf && <Lightbox src={pdf} type="pdf" name={pdfName} onClose={() => setPdfFullscreen(false)} />}
 
         {pdf ? (
           <div>
@@ -420,6 +429,36 @@ const DossierView = ({ st, sid, onTitleChange }) => {
   );
 };
 
+// ── Lightbox plein écran (image / PDF) ───────────────────────────
+const Lightbox = ({ src, type, name, onClose }) => {
+  useEffect(() => {
+    const onKey = e => { if (e.key === "Escape") onClose(); };
+    document.addEventListener("keydown", onKey);
+    document.body.style.overflow = "hidden";
+    return () => { document.removeEventListener("keydown", onKey); document.body.style.overflow = ""; };
+  }, []);
+
+  return (
+    <div onClick={onClose}
+      style={{ position:"fixed", inset:0, background:"rgba(0,0,0,.93)", zIndex:1000,
+               display:"flex", alignItems:"center", justifyContent:"center", padding:"50px 20px 20px" }}>
+      <button onClick={onClose}
+        style={{ position:"absolute", top:14, right:18, background:"rgba(255,255,255,.15)", color:"#fff",
+                 border:"none", borderRadius:6, width:40, height:40, fontSize:22, cursor:"pointer", lineHeight:1 }}>×</button>
+      {type === "pdf"
+        ? <object data={src} type="application/pdf" onClick={e=>e.stopPropagation()}
+            style={{ width:"100%", height:"100%", background:"#fff", borderRadius:4 }}>
+            <div style={{ padding:20, textAlign:"center", color:"#fff" }}>
+              Impossible d'afficher. <a href={src} download={name || "document.pdf"} style={{color:"#74aadf"}}>Télécharger</a>
+            </div>
+          </object>
+        : <img src={src} alt="" onClick={e=>e.stopPropagation()}
+            style={{ maxWidth:"100%", maxHeight:"100%", objectFit:"contain", borderRadius:4 }} />
+      }
+    </div>
+  );
+};
+
 // ── Canvas Mindmap ───────────────────────────────────────────────
 
 const CARD_COLORS = ["#3b6ea5","#c96a2a","#5b8a3a","#8b4a9a","#2a8a7a","#6b7890","#a04040","#c0983a"];
@@ -441,6 +480,7 @@ const CanvasCard = ({ card, sid, onDragStart, onResizeStart, onUpdate, onDelete,
   const [imgSrc, setImgSrc] = useState(() => {
     try { return localStorage.getItem(imgKey) || null; } catch { return null; }
   });
+  const [lightbox, setLightbox] = useState(false);
 
   useEffect(() => {
     if (titleRef.current)   titleRef.current.textContent   = card.title;
@@ -532,8 +572,17 @@ const CanvasCard = ({ card, sid, onDragStart, onResizeStart, onUpdate, onDelete,
             >
               {imgSrc ? <img src={imgSrc} alt="" style={{ width:"100%", height:"100%", objectFit:"cover", display:"block" }} />
                       : <div style={{ color:"#aaa", textAlign:"center", fontSize:12, userSelect:"none" }}>📷<br/>Cliquer ou glisser</div>}
-              {imgSrc && <div style={{ position:"absolute", top:4, right:4, background:"rgba(0,0,0,.5)", color:"#fff", fontSize:10, padding:"2px 6px", borderRadius:2, pointerEvents:"none" }}>✎</div>}
+              {imgSrc && <>
+                <button
+                  onClick={e => { e.stopPropagation(); setLightbox(true); }}
+                  onPointerDown={e => e.stopPropagation()}
+                  title="Plein écran"
+                  style={{ position:"absolute", top:4, left:4, background:"rgba(0,0,0,.55)", color:"#fff",
+                           border:"none", width:24, height:24, borderRadius:3, fontSize:12, cursor:"pointer", lineHeight:1 }}>⤢</button>
+                <div style={{ position:"absolute", top:4, right:4, background:"rgba(0,0,0,.5)", color:"#fff", fontSize:10, padding:"2px 6px", borderRadius:2, pointerEvents:"none" }}>✎</div>
+              </>}
             </div>
+            {lightbox && imgSrc && <Lightbox src={imgSrc} type="image" onClose={() => setLightbox(false)} />}
           : <div ref={contentRef} contentEditable suppressContentEditableWarning
               onBlur={e => onUpdate({ content: e.currentTarget.textContent })}
               onPointerDown={e => e.stopPropagation()}
@@ -568,7 +617,24 @@ const MindmapCanvas = ({ sid }) => {
 
   const [dragging, setDragging] = useState(null);
   const [resizing, setResizing] = useState(null);
+  const [zoom,     setZoom]     = useState(1);
+  const zoomRef = useRef(1);
+  useEffect(() => { zoomRef.current = zoom; }, [zoom]);
   const containerRef = useRef(null);
+
+  // Zoom au trackpad (Ctrl/Cmd + wheel) ou pinch tactile sur 2 doigts
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const onWheel = (e) => {
+      if (e.ctrlKey || e.metaKey) {
+        e.preventDefault();
+        setZoom(z => Math.max(0.3, Math.min(2, z * (e.deltaY < 0 ? 1.08 : 0.93))));
+      }
+    };
+    el.addEventListener("wheel", onWheel, { passive: false });
+    return () => el.removeEventListener("wheel", onWheel);
+  }, []);
 
   const persist = (list) => { try { localStorage.setItem(lsKey, JSON.stringify(list)); } catch {} };
 
@@ -601,8 +667,8 @@ const MindmapCanvas = ({ sid }) => {
     const card = cards.find(c => c.id === cardId);
     setDragging({
       cardId,
-      ox: e.clientX - rect.left + containerRef.current.scrollLeft - card.x,
-      oy: e.clientY - rect.top  + containerRef.current.scrollTop  - card.y,
+      ox: (e.clientX - rect.left + containerRef.current.scrollLeft) / zoomRef.current - card.x,
+      oy: (e.clientY - rect.top  + containerRef.current.scrollTop)  / zoomRef.current - card.y,
     });
     e.preventDefault();
   };
@@ -615,15 +681,16 @@ const MindmapCanvas = ({ sid }) => {
 
   useEffect(() => {
     const onMove = (e) => {
+      const z = zoomRef.current;
       if (dragging && containerRef.current) {
         const rect = containerRef.current.getBoundingClientRect();
-        const x = Math.max(0, e.clientX - rect.left + containerRef.current.scrollLeft - dragging.ox);
-        const y = Math.max(0, e.clientY - rect.top  + containerRef.current.scrollTop  - dragging.oy);
+        const x = Math.max(0, (e.clientX - rect.left + containerRef.current.scrollLeft) / z - dragging.ox);
+        const y = Math.max(0, (e.clientY - rect.top  + containerRef.current.scrollTop)  / z - dragging.oy);
         setCards(prev => prev.map(c => c.id === dragging.cardId ? { ...c, x, y } : c));
       }
       if (resizing) {
-        const w = Math.max(120, resizing.startW + e.clientX - resizing.startX);
-        let h = Math.max(60, resizing.startH + e.clientY - resizing.startY);
+        const w = Math.max(120, resizing.startW + (e.clientX - resizing.startX) / z);
+        let h = Math.max(60, resizing.startH + (e.clientY - resizing.startY) / z);
         // Si la carte a un ratio d'image, on dérive h depuis w (anti-rognage)
         const card = cards.find(c => c.id === resizing.cardId);
         if (card && card.imgRatio) {
@@ -647,8 +714,18 @@ const MindmapCanvas = ({ sid }) => {
     <div style={{ display:"flex", flexDirection:"column", flex:1, minHeight:0 }}>
       {/* Toolbar */}
       <div style={{ height:46, flexShrink:0, background:"#fff", borderBottom:"1px solid #e2e6ed", display:"flex", alignItems:"center", padding:"0 20px", gap:10 }}>
-        <span style={{ fontSize:13, color:"#8898b0" }}>Glisser les blocs · titre cliquable · scroll pour explorer</span>
+        <span style={{ fontSize:13, color:"#8898b0" }}>Glisser · zoom au pavé tactile (Ctrl+molette)</span>
         <div style={{ flex:1 }} />
+        <div style={{ display:"flex", alignItems:"center", gap:4, marginRight:4 }}>
+          <button onClick={() => setZoom(z => Math.max(0.3, z * 0.9))} title="Zoom arrière"
+            style={{ width:28, height:28, background:"#f5f6f9", color:"#5a6880", border:"1px solid #d8dde8", borderRadius:5, cursor:"pointer", fontSize:14, lineHeight:1 }}>−</button>
+          <button onClick={() => setZoom(1)} title="Réinitialiser le zoom"
+            style={{ padding:"0 8px", height:28, background:"#f5f6f9", color:"#5a6880", border:"1px solid #d8dde8", borderRadius:5, cursor:"pointer", fontSize:11, minWidth:48 }}>
+            {Math.round(zoom * 100)}%
+          </button>
+          <button onClick={() => setZoom(z => Math.min(2, z * 1.1))} title="Zoom avant"
+            style={{ width:28, height:28, background:"#f5f6f9", color:"#5a6880", border:"1px solid #d8dde8", borderRadius:5, cursor:"pointer", fontSize:14, lineHeight:1 }}>+</button>
+        </div>
         <button onClick={() => addCard("image")} style={{ padding:"5px 14px", background:"#f5f6f9", color:"#5a6880", border:"1px solid #d8dde8", borderRadius:5, cursor:"pointer", fontSize:13 }}>
           + Image
         </button>
@@ -658,8 +735,9 @@ const MindmapCanvas = ({ sid }) => {
       </div>
 
       {/* Canvas scrollable */}
-      <div ref={containerRef} style={{ flex:1, minHeight:0, overflow:"auto", position:"relative", background:"#f5f6f9", backgroundImage:"radial-gradient(circle, #c4c9d4 1px, transparent 1px)", backgroundSize:"22px 22px", cursor: dragging ? "grabbing" : resizing ? "se-resize" : "default" }}>
-        <div style={{ width:3000, height:2000, position:"relative" }}>
+      <div ref={containerRef} style={{ flex:1, minHeight:0, overflow:"auto", position:"relative", background:"#f5f6f9", backgroundImage:"radial-gradient(circle, #c4c9d4 1px, transparent 1px)", backgroundSize:`${22*zoom}px ${22*zoom}px`, cursor: dragging ? "grabbing" : resizing ? "se-resize" : "default" }}>
+        <div style={{ width: 3000 * zoom, height: 2000 * zoom, position:"relative" }}>
+          <div style={{ width: 3000, height: 2000, position:"relative", transform:`scale(${zoom})`, transformOrigin:"0 0" }}>
           {cards.map(card => (
             <CanvasCard
               key={card.id} card={card} sid={sid}
@@ -671,6 +749,7 @@ const MindmapCanvas = ({ sid }) => {
               isResizing={resizing?.cardId === card.id}
             />
           ))}
+          </div>
         </div>
       </div>
     </div>
@@ -1007,6 +1086,12 @@ const App = () => {
     });
     const { data: { subscription } } = _sb.auth.onAuthStateChange(async (event, session) => {
       if (event === "SIGNED_IN" && session?.user) {
+        // Évite la resync à chaque retour de focus (changement d'app/bureau)
+        if (_uid === session.user.id) {
+          setUser(session.user);
+          setAuthReady(true);
+          return;
+        }
         _uid = session.user.id;
         setSyncing(true);
         await loadUserData(session.user.id).catch(console.warn);
