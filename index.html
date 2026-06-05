@@ -950,6 +950,238 @@ const CanvasCard = ({ card, sid, onDragStart, onResizeStart, onUpdate, onDelete,
   );
 };
 
+// ════════════════════════════════════════════════════════════════
+//  GÉNÉRATION IA — GEMINI MINDMAP
+// ════════════════════════════════════════════════════════════════
+
+const GEMINI_API_KEY = "AQ.Ab8RN6KftwWdoZMMTeurR4B_Vrd8XmnW-ZnZIHxYj8L1CTJKUw";
+
+const GEMINI_MM_PROMPT = `Tu es un expert en pédagogie visuelle, en design de cartes mentales et en sciences cognitives.
+
+À partir du contenu que je vais fournir, crée une seule carte mentale extrêmement claire, esthétique et optimisée pour la mémorisation d'un élève de lycée préparant un oral de DNL Histoire-Géographie en allemand.
+
+OBJECTIF :
+Transformer un cours dense en une carte mentale ultra-visuelle permettant une compréhension immédiate et une mémorisation rapide.
+
+RÈGLES ABSOLUES :
+- Toute la carte mentale doit être en allemand.
+- Ne rédige pas de paragraphes.
+- Utilise uniquement des mots-clés, concepts clés, dates importantes, acteurs, lieux et relations essentielles.
+- Réduis chaque idée à son essence.
+- Hiérarchise clairement les informations.
+- Fais apparaître les liens logiques, les causes, les conséquences et les enjeux.
+- Élimine toute information secondaire ou redondante.
+
+STRUCTURE VISUELLE :
+CENTRE : Le thème principal du chapitre. Grand titre central très visible.
+NIVEAU 1 : 6 à 8 branches principales maximum. Une couleur distincte par branche.
+NIVEAU 2 : Sous-thèmes essentiels.
+NIVEAU 3 : Exemples, dates, acteurs, notions importantes.
+
+STYLE VISUEL :
+- Design moderne et professionnel. Aspect "studygram" haut de gamme.
+- Organisation parfaitement équilibrée. Lecture intuitive en moins de 30 secondes.
+- Couleurs cohérentes et contrastées. Flèches montrant les liens de cause à effet.
+- Icônes pertinentes pour chaque notion. Dates mises en évidence.
+- Concepts majeurs encadrés. Hiérarchie visuelle très nette.
+
+MISE EN VALEUR :
+- Les notions indispensables apparaissent en très gros.
+- Les notions importantes en taille moyenne.
+- Les détails en taille plus petite.
+
+AJOUTER :
+✓ frise chronologique miniature si nécessaire
+✓ légende discrète
+✓ connexions transversales entre les branches
+✓ symboles visuels
+✓ pictogrammes mémorisables
+
+OPTIMISATION MÉMOIRE :
+La carte doit respecter : Chunking, Double codage (texte + visuel), Hiérarchisation forte, Réduction de la charge cognitive, Apprentissage rapide avant un oral.
+
+STYLE FINAL : "Carte mentale premium de révision pour obtenir la meilleure note possible à un oral de DNL Histoire-Géographie."
+
+utilise tes recherches
+
+---
+IMPORTANT — FORMAT DE RÉPONSE :
+Réponds UNIQUEMENT avec un objet JSON valide (pas de \`\`\`json, pas de markdown, pas de commentaires).
+Format strict :
+{
+  "titre": "Thème principal en allemand (2-5 mots)",
+  "branches": [
+    {
+      "titre": "Titre de branche (2-4 mots en allemand)",
+      "contenu": "• Mot-clé 1\\n• Date : événement\\n• Acteur clé\\n→ Conséquence",
+      "couleur": "#3b6ea5"
+    }
+  ]
+}
+Génère exactement 6 à 8 branches. Tout en allemand. Couleurs variées pour chaque branche.`;
+
+// Positions fixes pour un layout mindmap propre (4 cols × 2 rows)
+const BRANCH_LAYOUT = [
+  { x:20,   y:180 }, { x:350,  y:180 }, { x:680,  y:180 }, { x:1010, y:180 },
+  { x:20,   y:460 }, { x:350,  y:460 }, { x:680,  y:460 }, { x:1010, y:460 },
+];
+
+const buildAICards = (data) => {
+  const ts = Date.now();
+  const cards = [];
+  cards.push({
+    id: `ai_${ts}_c`, title: data.titre || "Hauptthema",
+    color: "#c96a2a", x: 20, y: 20, w: 640, h: 120,
+    type: "text", content: "🎯 " + (data.titre || ""),
+  });
+  (data.branches || []).slice(0, 8).forEach((b, i) => {
+    const pos = BRANCH_LAYOUT[i] || { x: 20 + i * 50, y: 700 };
+    const lines = (b.contenu || "").split("\n").length;
+    cards.push({
+      id: `ai_${ts}_${i}`,
+      title: b.titre || `Zweig ${i + 1}`,
+      color: b.couleur || CARD_COLORS[i % CARD_COLORS.length],
+      x: pos.x, y: pos.y, w: 300,
+      h: Math.max(190, 32 + lines * 22),
+      type: "text", content: b.contenu || "",
+    });
+  });
+  return cards;
+};
+
+// ── Modal Gemini ─────────────────────────────────────────────────
+const GeminiModal = ({ sid, onClose, onApply }) => {
+  const [step,   setStep]   = useState("idle");
+  const [errMsg, setErrMsg] = useState("");
+
+  useEffect(() => {
+    const fn = e => { if (e.key === "Escape") onClose(); };
+    document.addEventListener("keydown", fn);
+    document.body.style.overflow = "hidden";
+    return () => { document.removeEventListener("keydown", fn); document.body.style.overflow = ""; };
+  }, []);
+
+  const run = async () => {
+    const key = GEMINI_API_KEY;
+    setErrMsg("");
+
+    try {
+      // Étape 1 : extraire le texte du PDF
+      setStep("extracting");
+      const pdfData = localStorage.getItem(`${sid}_pdf`);
+      if (!pdfData) throw new Error("Aucun PDF trouvé dans ce dossier.\nCharge ton cours PDF dans l'onglet Dossier puis réessaie.");
+
+      await loadPDFJS();
+      const pdfDoc = await window.pdfjsLib.getDocument(pdfData).promise;
+      let pdfText = "";
+      for (let p = 1; p <= pdfDoc.numPages; p++) {
+        const page = await pdfDoc.getPage(p);
+        const tc   = await page.getTextContent();
+        pdfText   += tc.items.map(it => it.str).join(" ") + "\n";
+      }
+      pdfText = pdfText.trim().slice(0, 60000);
+      if (!pdfText) throw new Error("Le PDF est un scan image — le texte ne peut pas être extrait.\nUtilise un PDF avec du texte sélectionnable.");
+
+      // Étape 2 : appeler Gemini
+      setStep("calling");
+      const prompt = GEMINI_MM_PROMPT + "\n\n---\nCONTENU DU COURS :\n" + pdfText;
+
+      const res = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: prompt }] }],
+            generationConfig: { temperature: 0.65, maxOutputTokens: 4096 },
+          }),
+        }
+      );
+
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error?.message || `Erreur HTTP ${res.status}`);
+
+      let raw = json.candidates?.[0]?.content?.parts?.[0]?.text || "";
+      // Enlever les balises markdown si Gemini les ajoute quand même
+      raw = raw.replace(/^```(?:json)?\n?/m, "").replace(/\n?```$/m, "").trim();
+
+      const data = JSON.parse(raw);
+      onApply(buildAICards(data));
+      onClose();
+
+    } catch (e) {
+      setErrMsg(e.message || "Erreur inconnue");
+      setStep("error");
+    }
+  };
+
+  const busy = step === "extracting" || step === "calling";
+
+  return ReactDOM.createPortal(
+    <div onClick={onClose} style={{ position:"fixed", inset:0, background:"rgba(10,18,30,.6)",
+      backdropFilter:"blur(3px)", zIndex:9000, display:"flex", alignItems:"center",
+      justifyContent:"center", fontFamily:"'Plus Jakarta Sans',sans-serif", padding:20 }}>
+      <div onClick={e => e.stopPropagation()} className="anim-fadein"
+        style={{ background:"#fff", borderRadius:18, width:"100%", maxWidth:460,
+          padding:"30px 32px", boxShadow:"0 24px 64px rgba(0,0,0,.25)" }}>
+
+        {/* En-tête */}
+        <div style={{ display:"flex", alignItems:"center", gap:14, marginBottom:24 }}>
+          <div style={{ width:46, height:46, borderRadius:13,
+            background:"linear-gradient(135deg,#2454A0 0%,#6366f1 100%)",
+            display:"flex", alignItems:"center", justifyContent:"center",
+            fontSize:24, flexShrink:0, boxShadow:"0 4px 14px rgba(99,102,241,.35)" }}>✨</div>
+          <div>
+            <div style={{ fontSize:17, fontWeight:800, color:"#1a2332" }}>Générer avec Gemini</div>
+            <div style={{ fontSize:12, color:"#8898b0", marginTop:2 }}>Carte mentale DNL depuis le PDF du dossier</div>
+          </div>
+          <div style={{ flex:1 }} />
+          <button onClick={onClose} style={{ width:30, height:30, borderRadius:"50%", background:"#f0f2f5",
+            border:"none", cursor:"pointer", fontSize:17, color:"#5a6880", lineHeight:1 }}>×</button>
+        </div>
+
+        {/* Progression */}
+        {busy && (
+          <div style={{ background:"#f0f4ff", borderRadius:10, padding:"13px 16px", marginBottom:16,
+            display:"flex", alignItems:"center", gap:10, border:"1px solid #dde8ff" }}>
+            <div style={{ fontSize:16, color:"#6366f1" }}>⟳</div>
+            <div style={{ fontSize:13, color:"#2454A0", fontWeight:600 }}>
+              {step === "extracting" ? "Extraction du texte PDF…" : "Gemini génère ta carte mentale…"}
+            </div>
+          </div>
+        )}
+
+        {/* Erreur */}
+        {step === "error" && (
+          <div style={{ background:"#fef2f2", border:"1px solid #fecaca", borderRadius:10,
+            padding:"13px 16px", marginBottom:16, whiteSpace:"pre-line" }}>
+            <div style={{ fontSize:12, fontWeight:700, color:"#dc2626", marginBottom:4 }}>Erreur</div>
+            <div style={{ fontSize:12, color:"#b91c1c" }}>{errMsg}</div>
+          </div>
+        )}
+
+        {/* Boutons */}
+        <div style={{ display:"flex", gap:10 }}>
+          <button onClick={onClose} style={{ flex:1, padding:"11px", background:"#f5f6f9",
+            color:"#5a6880", border:"1px solid #d8dde8", borderRadius:9, cursor:"pointer",
+            fontSize:14, fontFamily:"inherit" }}>Annuler</button>
+          <button onClick={run} disabled={busy}
+            style={{ flex:2, padding:"11px",
+              background:busy?"#94a3b8":"linear-gradient(135deg,#2454A0,#6366f1)",
+              color:"#fff", border:"none", borderRadius:9,
+              cursor:busy?"default":"pointer",
+              fontSize:14, fontWeight:700, fontFamily:"inherit",
+              boxShadow:busy?"none":"0 4px 14px rgba(99,102,241,.35)",
+              transition:"all .2s" }}>
+            {busy ? "Génération…" : "✨ Générer la carte mentale"}
+          </button>
+        </div>
+      </div>
+    </div>,
+    document.body
+  );
+};
+
 const MindmapCanvas = ({ sid }) => {
   const lsKey = `${sid}_canvas_state`;
   const counter = useRef(100);
@@ -971,9 +1203,12 @@ const MindmapCanvas = ({ sid }) => {
     return () => el.removeEventListener("wheel", onWheel);
   }, []);
 
+  const [showGemini, setShowGemini] = useState(false);
+
   const persist = (list) => { try { localStorage.setItem(lsKey, JSON.stringify(list)); } catch {} };
   const updateCard = (id, updates) => setCards(prev => { const next = prev.map(c => c.id===id?{...c,...updates}:c); persist(next); return next; });
   const deleteCard = (id) => setCards(prev => { const next = prev.filter(c => c.id!==id); persist(next); return next; });
+  const applyAICards = (newCards) => { persist(newCards); setCards(newCards); };
   const addCard = (type) => {
     const id = `card_${counter.current++}`;
     const card = { id, type, title:type==="image"?"Image / Carte":"Nouveau bloc",
@@ -1035,7 +1270,11 @@ const MindmapCanvas = ({ sid }) => {
             style={{ width:28, height:28, background:"#f5f6f9", color:"#5a6880", border:"1px solid #d8dde8", borderRadius:5, cursor:"pointer", fontSize:14 }}>+</button>
         </div>
         <button onClick={() => addCard("image")} style={{ padding:"5px 14px", background:"#f5f6f9", color:"#5a6880", border:"1px solid #d8dde8", borderRadius:5, cursor:"pointer", fontSize:13 }}>+ Image</button>
-        <button onClick={() => addCard("text")} style={{ padding:"5px 14px", background:"#2d60a7", color:"#fff", border:"none", borderRadius:5, cursor:"pointer", fontSize:13 }}>+ Bloc texte</button>
+        <button onClick={() => addCard("text")} style={{ padding:"5px 14px", background:"#f5f6f9", color:"#5a6880", border:"1px solid #d8dde8", borderRadius:5, cursor:"pointer", fontSize:13 }}>+ Texte</button>
+        <button onClick={() => setShowGemini(true)}
+          style={{ padding:"5px 16px", background:"linear-gradient(135deg,#2454A0,#6366f1)",
+            color:"#fff", border:"none", borderRadius:5, cursor:"pointer", fontSize:13, fontWeight:600,
+            boxShadow:"0 2px 8px rgba(99,102,241,.35)" }}>✨ Générer avec l'IA</button>
       </div>
       <div ref={containerRef} style={{ flex:1, minHeight:0, overflow:"auto", position:"relative", background:"#f5f6f9",
         backgroundImage:"radial-gradient(circle, #c4c9d4 1px, transparent 1px)",
@@ -1055,6 +1294,9 @@ const MindmapCanvas = ({ sid }) => {
           </div>
         </div>
       </div>
+      {showGemini && (
+        <GeminiModal sid={sid} onClose={() => setShowGemini(false)} onApply={applyAICards} />
+      )}
     </div>
   );
 };
