@@ -1082,30 +1082,54 @@ const GeminiModal = ({ sid, onClose, onApply }) => {
       pdfText = pdfText.trim().slice(0, 60000);
       if (!pdfText) throw new Error("Le PDF est un scan image — le texte ne peut pas être extrait.\nUtilise un PDF avec du texte sélectionnable.");
 
-      // Étape 2 : appeler Gemini
+      // Étape 2 : appeler Gemini (retry x3 si surcharge)
       setStep("calling");
       const prompt = GEMINI_MM_PROMPT + "\n\n---\nCONTENU DU COURS :\n" + pdfText;
+      const MODELS = ["gemini-2.5-flash", "gemini-2.5-flash-preview-05-20", "gemini-2.0-flash"];
+      const DELAYS = [0, 3000, 6000];
 
-      const res = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${key}`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            contents: [{ parts: [{ text: prompt }] }],
-            generationConfig: { temperature: 0.65, maxOutputTokens: 4096 },
-          }),
+      let json, res;
+      let lastErr = "";
+      outer: for (const model of MODELS) {
+        for (let attempt = 0; attempt < 3; attempt++) {
+          if (DELAYS[attempt] > 0) await new Promise(r => setTimeout(r, DELAYS[attempt]));
+          res = await fetch(
+            `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`,
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                contents: [{ parts: [{ text: prompt }] }],
+                generationConfig: { temperature: 0.65, maxOutputTokens: 16384 },
+              }),
+            }
+          );
+          json = await res.json();
+          if (res.ok) break outer;
+          lastErr = json.error?.message || `Erreur HTTP ${res.status}`;
+          const isOverloaded = res.status === 503 || (lastErr||"").toLowerCase().includes("demand");
+          if (!isOverloaded) break outer; // erreur non-transitoire → pas la peine de réessayer
         }
-      );
-
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.error?.message || `Erreur HTTP ${res.status}`);
+        // Si on sort de la boucle attempt sans succès sur ce modèle → essayer le suivant
+        if (!res.ok) continue;
+        break;
+      }
+      if (!res.ok) throw new Error(lastErr || `Erreur HTTP ${res.status}`);
 
       let raw = json.candidates?.[0]?.content?.parts?.[0]?.text || "";
-      // Enlever les balises markdown si Gemini les ajoute quand même
-      raw = raw.replace(/^```(?:json)?\n?/m, "").replace(/\n?```$/m, "").trim();
+      if (!raw) throw new Error("Gemini n'a renvoyé aucun texte. Réessaie.");
+      // Enlever toutes les balises markdown possibles
+      raw = raw.replace(/^```(?:json)?\s*/i, "").replace(/\s*```\s*$/i, "").trim();
+      // Extraire uniquement le bloc JSON si du texte parasite l'entoure
+      const jsonStart = raw.indexOf("{");
+      const jsonEnd   = raw.lastIndexOf("}");
+      if (jsonStart !== -1 && jsonEnd !== -1) raw = raw.slice(jsonStart, jsonEnd + 1);
 
-      const data = JSON.parse(raw);
+      let data;
+      try { data = JSON.parse(raw); }
+      catch (parseErr) {
+        throw new Error("Réponse JSON invalide de Gemini.\nDétail : " + parseErr.message + "\n\nRéessaie — le modèle produit parfois une réponse mal formée.");
+      }
       onApply(buildAICards(data));
       onClose();
 
