@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>StudySpace — Révision</title>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
   <script>
     (function () {
@@ -41,22 +41,66 @@
   <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
   <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
   <style>
+    /* ── iOS 26 Liquid Glass Design System ── */
+    :root {
+      --glass:        rgba(255,255,255,0.68);
+      --glass-border: rgba(255,255,255,0.55);
+      --glass-shadow: 0 8px 32px rgba(0,0,0,0.10),inset 0 1px 0 rgba(255,255,255,0.72),inset 0 -1px 0 rgba(0,0,0,0.04);
+      --glass-dark:   rgba(22,22,26,0.80);
+      --glass-dark-b: rgba(255,255,255,0.09);
+      --blur:   blur(28px) saturate(180%);
+      --blur-s: blur(18px) saturate(160%);
+      --blue:   #007AFF;
+      --blue-t: rgba(0,122,255,0.12);
+      --red:    #FF3B30;
+      --green:  #34C759;
+      --label:  #1c1c1e;
+      --label2: rgba(60,60,67,0.60);
+      --label3: rgba(60,60,67,0.30);
+      --sep:    rgba(60,60,67,0.12);
+      --fill:   rgba(120,120,128,0.18);
+      --r1: 10px; --r2: 14px; --r3: 20px; --r4: 28px;
+    }
+
     *, *::before, *::after { box-sizing: border-box; }
     html, body, #root { height: 100%; margin: 0; padding: 0; }
-    body { font-family: 'Plus Jakarta Sans', sans-serif; background: #f0f2f5; color: #1a2332; }
-    h1, h2, h3, p { margin: 0; }
+
+    body {
+      font-family: -apple-system,"SF Pro Display","SF Pro Text","Helvetica Neue",Inter,sans-serif;
+      background: #c9d8f0;
+      color: var(--label);
+    }
+
+    /* Animated gradient mesh — feeds the glass panels */
+    body::before {
+      content: '';
+      position: fixed; inset: 0; z-index: -1;
+      background:
+        radial-gradient(ellipse 80% 60% at 12% 14%, rgba(96,165,250,0.55) 0%, transparent 55%),
+        radial-gradient(ellipse 65% 75% at 87% 82%, rgba(167,85,247,0.48) 0%, transparent 55%),
+        radial-gradient(ellipse 70% 52% at 72% 6%,  rgba(236,72,153,0.36) 0%, transparent 50%),
+        radial-gradient(ellipse 55% 65% at 6%  78%, rgba(52,211,153,0.28) 0%, transparent 50%),
+        #bfdbfe;
+      animation: meshShift 30s ease infinite alternate;
+    }
+    @keyframes meshShift {
+      0%   { filter: hue-rotate(0deg)   brightness(1.00); }
+      50%  { filter: hue-rotate(20deg)  brightness(1.04); }
+      100% { filter: hue-rotate(-14deg) brightness(0.96); }
+    }
+
+    h1,h2,h3,p { margin: 0; }
     button { font-family: inherit; }
 
     [contenteditable] { cursor: text; }
-    [contenteditable]:hover { background: rgba(36,84,160,.05); border-radius: 2px; }
-    [contenteditable]:focus { outline: 2px solid rgba(36,84,160,.25); outline-offset: 1px; border-radius: 2px; background: rgba(36,84,160,.04); }
-    [contenteditable]:empty::before { content: attr(data-ph); color: #b8c0cc; font-style: italic; pointer-events: none; }
+    [contenteditable]:hover  { background: rgba(0,0,0,.04); border-radius: 6px; }
+    [contenteditable]:focus  { outline: 2px solid rgba(0,122,255,.30); outline-offset: 1px; border-radius: 6px; background: rgba(0,122,255,.04); }
+    [contenteditable]:empty::before { content: attr(data-ph); color: var(--label3); font-style: italic; pointer-events: none; }
 
     ::-webkit-scrollbar { width: 5px; }
     ::-webkit-scrollbar-track { background: transparent; }
-    ::-webkit-scrollbar-thumb { background: #cdd2dc; border-radius: 3px; }
-
-    aside::-webkit-scrollbar-thumb { background: #3a4e68; }
+    ::-webkit-scrollbar-thumb { background: rgba(60,60,67,0.22); border-radius: 3px; }
+    aside::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.16); }
 
     @keyframes blob1 {
       0%,100% { transform: translate(0,0) scale(1); }
@@ -68,13 +112,14 @@
       33% { transform: translate(-25px,20px) scale(1.04); }
       66% { transform: translate(20px,-15px) scale(0.97); }
     }
-    @keyframes fadeIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
-    .anim-blob1 { animation: blob1 9s ease-in-out infinite; }
-    .anim-blob2 { animation: blob2 11s ease-in-out infinite; }
-    .anim-fadein { animation: fadeIn .35s ease both; }
+    @keyframes fadeIn { from { opacity:0; transform:translateY(10px) scale(.98); } to { opacity:1; transform:translateY(0) scale(1); } }
+    .anim-blob1  { animation: blob1 9s ease-in-out infinite; }
+    .anim-blob2  { animation: blob2 11s ease-in-out infinite; }
+    .anim-fadein { animation: fadeIn .38s cubic-bezier(0.34,1.4,0.64,1) both; }
 
     @media print {
       [data-np] { display: none !important; }
+      body::before { display: none !important; }
       body, html, #root { height: auto !important; overflow: visible !important; background: white; }
       #root > div { height: auto !important; overflow: visible !important; }
       .print-zone { overflow: visible !important; height: auto !important; }
@@ -225,12 +270,12 @@ const ImgSlot = ({ storageKey, height = 140 }) => {
       onDrop={(e) => { e.preventDefault(); charger(e.dataTransfer.files[0]); }}
       onDragOver={(e) => e.preventDefault()}
       style={{ width:"100%", height, borderRadius:4, overflow:"hidden", cursor:"pointer", position:"relative",
-        background: src ? "#000" : "repeating-linear-gradient(45deg,#e6e8ec,#e6e8ec 2px,#f3f4f6 2px,#f3f4f6 12px)",
-        border: src ? "none" : "2px dashed #c4c9d4",
+        background: src ? "#000" : "rgba(255,255,255,0.28)",
+        border: src ? "none" : "2px dashed rgba(255,255,255,0.5)",
         display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
       {src
         ? <img src={src} alt="" style={{ width:"100%", height:"100%", objectFit:"cover" }} />
-        : <div style={{ color:"#9aa3b0", fontSize:13, textAlign:"center", padding:10, userSelect:"none" }}>📷<br/>Cliquer ou glisser une image</div>}
+        : <div style={{ color:"rgba(60,60,67,0.45)", fontSize:13, textAlign:"center", padding:10, userSelect:"none" }}>📷<br/>Cliquer ou glisser une image</div>}
       {src && <div style={{ position:"absolute", top:6, right:6, background:"rgba(0,0,0,.55)", color:"#fff", fontSize:11, padding:"2px 7px", borderRadius:3, pointerEvents:"none" }}>✎ remplacer</div>}
     </div>
   );
@@ -579,44 +624,47 @@ const PDFAnnotator = ({ pdfData, pdfName, annotKey, onRemove }) => {
   };
 
   const toolbar = (
-    <div style={{ background:"#fff", borderBottom:"1px solid #e2e6ed", padding:"7px 12px",
+    <div style={{ background:"rgba(255,255,255,0.65)", backdropFilter:"blur(20px) saturate(180%)", WebkitBackdropFilter:"blur(20px) saturate(180%)",
+      borderBottom:"1px solid rgba(255,255,255,0.5)", padding:"7px 12px",
       display:"flex", alignItems:"center", gap:7, flexWrap:"wrap", flexShrink:0 }}>
 
       {/* Toggle Visualiser / Annoter */}
-      <div style={{ display:"flex", border:"1.5px solid #e2e6ed", borderRadius:8, overflow:"hidden", flexShrink:0 }}>
+      <div style={{ display:"flex", background:"rgba(120,120,128,0.14)", borderRadius:10, overflow:"hidden", flexShrink:0 }}>
         <button onClick={() => setEditMode(false)}
-          style={{ padding:"5px 13px", background:!editMode?"#1d2b42":"#f8f9fc",
-            color:!editMode?"#fff":"#5a6880", border:"none", cursor:"pointer",
+          style={{ padding:"5px 13px", background:!editMode?"rgba(18,18,22,0.82)":"transparent",
+            backdropFilter:!editMode?"blur(8px)":"none",
+            color:!editMode?"#fff":"rgba(60,60,67,0.6)", border:"none", cursor:"pointer",
             fontSize:12, fontFamily:"inherit", fontWeight:!editMode?700:400,
-            transition:"all .15s", whiteSpace:"nowrap" }}>
+            transition:"all .15s", whiteSpace:"nowrap", borderRadius:9 }}>
           👁 Visualiser
         </button>
         <button onClick={() => setEditMode(true)}
-          style={{ padding:"5px 13px", background:editMode?"#2454A0":"#f8f9fc",
-            color:editMode?"#fff":"#5a6880", border:"none", cursor:"pointer",
+          style={{ padding:"5px 13px", background:editMode?"#007AFF":"transparent",
+            color:editMode?"#fff":"rgba(60,60,67,0.6)", border:"none", cursor:"pointer",
             fontSize:12, fontFamily:"inherit", fontWeight:editMode?700:400,
-            transition:"all .15s", whiteSpace:"nowrap" }}>
+            transition:"all .15s", whiteSpace:"nowrap", borderRadius:9,
+            boxShadow:editMode?"0 2px 6px rgba(0,122,255,0.3)":"none" }}>
           ✏ Annoter
         </button>
       </div>
 
       {/* Séparateur */}
-      {editMode && <div style={{ width:1, height:20, background:"#e2e6ed", flexShrink:0 }} />}
+      {editMode && <div style={{ width:1, height:20, background:"rgba(60,60,67,0.15)", flexShrink:0 }} />}
 
       {/* Outils — visibles seulement en mode annotation */}
       {editMode && Object.entries(ANNOT_TOOLS).map(([key, cfg]) => (
         <button key={key} onClick={() => handleToolChange(key)}
-          style={{ padding:"4px 10px", borderRadius:6,
-            border:`1.5px solid ${tool===key?"#2454A0":"#e2e6ed"}`,
-            background:tool===key?"#eef2fc":"#f8f9fc",
-            color:tool===key?"#2454A0":"#5a6880",
+          style={{ padding:"4px 10px", borderRadius:8,
+            border:`1.5px solid ${tool===key?"#007AFF":"transparent"}`,
+            background:tool===key?"rgba(0,122,255,0.12)":"rgba(120,120,128,0.12)",
+            color:tool===key?"#007AFF":"rgba(60,60,67,0.65)",
             cursor:"pointer", fontSize:12, fontWeight:tool===key?700:400,
             fontFamily:"inherit", transition:"all .12s", whiteSpace:"nowrap" }}>
           {cfg.label}
         </button>
       ))}
 
-      {editMode && <div style={{ width:1, height:20, background:"#e2e6ed", flexShrink:0 }} />}
+      {editMode && <div style={{ width:1, height:20, background:"rgba(60,60,67,0.15)", flexShrink:0 }} />}
 
       {/* Couleurs */}
       {editMode && tool !== "gomme" && colorSet.map(c => (
@@ -626,33 +674,33 @@ const PDFAnnotator = ({ pdfData, pdfName, annotKey, onRemove }) => {
             transform:color===c?"scale(1.18)":"scale(1)", transition:"all .12s" }} />
       ))}
 
-      {editMode && tool !== "gomme" && <div style={{ width:1, height:20, background:"#e2e6ed", flexShrink:0 }} />}
+      {editMode && tool !== "gomme" && <div style={{ width:1, height:20, background:"rgba(60,60,67,0.15)", flexShrink:0 }} />}
 
       {/* Épaisseur */}
       {editMode && tool !== "gomme" && [1, 2, 4].map(s => (
         <div key={s} onClick={() => setPenSize(s)}
           style={{ width:20+s*2, height:20+s*2, borderRadius:"50%",
-            background:penSize===s?"#2454A0":"#e8ecf2",
+            background:penSize===s?"#007AFF":"rgba(120,120,128,0.18)",
             cursor:"pointer", flexShrink:0, display:"flex", alignItems:"center", justifyContent:"center",
             transition:"all .12s" }}>
-          <div style={{ width:s*2, height:s*2, borderRadius:"50%", background:penSize===s?"#fff":"#8898b0" }} />
+          <div style={{ width:s*2, height:s*2, borderRadius:"50%", background:penSize===s?"#fff":"rgba(60,60,67,0.5)" }} />
         </div>
       ))}
 
       {/* Zoom */}
-      <div style={{ width:1, height:20, background:"#e2e6ed", flexShrink:0 }} />
+      <div style={{ width:1, height:20, background:"rgba(60,60,67,0.15)", flexShrink:0 }} />
       <div style={{ display:"flex", alignItems:"center", gap:3, flexShrink:0 }}>
         <button onClick={() => setZoom(z => Math.max(0.3, z * 0.85))}
-          style={{ width:26, height:26, borderRadius:5, border:"1px solid #d8dde8", background:"#f8f9fc",
-            color:"#5a6880", cursor:"pointer", fontSize:14, lineHeight:1, fontFamily:"inherit" }}>−</button>
+          style={{ width:26, height:26, borderRadius:8, border:"none", background:"rgba(120,120,128,0.14)",
+            color:"rgba(60,60,67,0.7)", cursor:"pointer", fontSize:14, lineHeight:1, fontFamily:"inherit" }}>−</button>
         <button onClick={() => setZoom(1)}
-          style={{ padding:"0 7px", height:26, borderRadius:5, border:"1px solid #d8dde8", background:"#f8f9fc",
-            color:"#5a6880", cursor:"pointer", fontSize:11, minWidth:44, fontFamily:"inherit" }}>
+          style={{ padding:"0 7px", height:26, borderRadius:8, border:"none", background:"rgba(120,120,128,0.14)",
+            color:"rgba(60,60,67,0.7)", cursor:"pointer", fontSize:11, minWidth:44, fontFamily:"inherit" }}>
           {Math.round(zoom * 100)}%
         </button>
         <button onClick={() => setZoom(z => Math.min(3, z * 1.15))}
-          style={{ width:26, height:26, borderRadius:5, border:"1px solid #d8dde8", background:"#f8f9fc",
-            color:"#5a6880", cursor:"pointer", fontSize:14, lineHeight:1, fontFamily:"inherit" }}>+</button>
+          style={{ width:26, height:26, borderRadius:8, border:"none", background:"rgba(120,120,128,0.14)",
+            color:"rgba(60,60,67,0.7)", cursor:"pointer", fontSize:14, lineHeight:1, fontFamily:"inherit" }}>+</button>
       </div>
 
       <div style={{ flex:1 }} />
@@ -660,27 +708,27 @@ const PDFAnnotator = ({ pdfData, pdfName, annotKey, onRemove }) => {
       {/* Undo / Clear — seulement en mode annotation */}
       {editMode && <>
         <button onClick={handleUndo}
-          style={{ padding:"4px 10px", borderRadius:6, border:"1px solid #d8dde8",
-            background:"#f8f9fc", color:"#5a6880", cursor:"pointer", fontSize:12, fontFamily:"inherit" }}>
+          style={{ padding:"4px 10px", borderRadius:8, border:"none",
+            background:"rgba(120,120,128,0.14)", color:"rgba(60,60,67,0.7)", cursor:"pointer", fontSize:12, fontFamily:"inherit" }}>
           ↩ Annuler
         </button>
         <button onClick={handleClearAll}
-          style={{ padding:"4px 10px", borderRadius:6, border:"1px solid #fecaca",
-            background:"#fff5f5", color:"#dc2626", cursor:"pointer", fontSize:12, fontFamily:"inherit" }}>
+          style={{ padding:"4px 10px", borderRadius:8, border:"none",
+            background:"rgba(255,59,48,0.10)", color:"#FF3B30", cursor:"pointer", fontSize:12, fontFamily:"inherit" }}>
           🗑 Effacer tout
         </button>
       </>}
 
       {/* Plein écran + Retirer — toujours visibles */}
       <button onClick={() => setFullscreen(f=>!f)}
-        style={{ padding:"4px 10px", borderRadius:6, border:"1px solid #d8dde8",
-          background:"#f8f9fc", color:"#5a6880", cursor:"pointer", fontSize:12, fontFamily:"inherit" }}>
+        style={{ padding:"4px 10px", borderRadius:8, border:"none",
+          background:"rgba(120,120,128,0.14)", color:"rgba(60,60,67,0.7)", cursor:"pointer", fontSize:12, fontFamily:"inherit" }}>
         {fullscreen ? "✕ Réduire" : "⤢ Plein écran"}
       </button>
       {onRemove && (
         <button onClick={onRemove}
-          style={{ padding:"4px 10px", borderRadius:6, border:"1px solid #d8dde8",
-            background:"#f8f9fc", color:"#5a6880", cursor:"pointer", fontSize:12, fontFamily:"inherit" }}>
+          style={{ padding:"4px 10px", borderRadius:8, border:"none",
+            background:"rgba(120,120,128,0.14)", color:"rgba(60,60,67,0.7)", cursor:"pointer", fontSize:12, fontFamily:"inherit" }}>
           Retirer PDF
         </button>
       )}
@@ -688,16 +736,16 @@ const PDFAnnotator = ({ pdfData, pdfName, annotKey, onRemove }) => {
   );
 
   const pagesList = (
-    <div ref={containerRef} style={{ flex:1, overflowY:"auto", overflowX:"auto", padding:"12px 16px", background:"#f0f2f5", minHeight:0 }}>
+    <div ref={containerRef} style={{ flex:1, overflowY:"auto", overflowX:"auto", padding:"12px 16px", background:"rgba(255,255,255,0.18)", minHeight:0 }}>
       {loading && (
-        <div style={{ textAlign:"center", padding:"60px 20px", color:"#8898b0" }}>
-          <div style={{ fontSize:28, marginBottom:10 }}>⟳</div>
+        <div style={{ textAlign:"center", padding:"60px 20px", color:"rgba(60,60,67,0.45)" }}>
+          <div style={{ fontSize:28, marginBottom:10, color:"#007AFF" }}>⟳</div>
           <div style={{ fontSize:13 }}>Chargement du PDF…</div>
-          <div style={{ fontSize:11, marginTop:6, color:"#b8c0cc" }}>PDF.js se charge depuis le CDN</div>
+          <div style={{ fontSize:11, marginTop:6, color:"rgba(60,60,67,0.3)" }}>PDF.js se charge depuis le CDN</div>
         </div>
       )}
       {loadError && (
-        <div style={{ padding:16, background:"#fef2f2", borderRadius:8, color:"#dc2626", fontSize:13 }}>{loadError}</div>
+        <div style={{ padding:16, background:"rgba(255,59,48,0.08)", borderRadius:12, color:"#FF3B30", fontSize:13, border:"1px solid rgba(255,59,48,0.2)" }}>{loadError}</div>
       )}
       {!loading && !loadError && (
         <div style={{ width:`${Math.round(zoom * 100)}%`, minWidth:"30%", margin:"0 auto" }}>
@@ -713,8 +761,9 @@ const PDFAnnotator = ({ pdfData, pdfName, annotKey, onRemove }) => {
 
   if (fullscreen) {
     return ReactDOM.createPortal(
-      <div style={{ position:"fixed", inset:0, zIndex:9999, background:"#f0f2f5",
-        display:"flex", flexDirection:"column", fontFamily:"'Plus Jakarta Sans',sans-serif" }}>
+      <div style={{ position:"fixed", inset:0, zIndex:9999,
+        background:"rgba(10,12,20,0.92)", backdropFilter:"blur(32px) saturate(180%)", WebkitBackdropFilter:"blur(32px) saturate(180%)",
+        display:"flex", flexDirection:"column", fontFamily:"-apple-system,'SF Pro Display','SF Pro Text','Helvetica Neue',Inter,sans-serif" }}>
         {toolbar}{pagesList}
       </div>,
       document.body
@@ -722,7 +771,8 @@ const PDFAnnotator = ({ pdfData, pdfName, annotKey, onRemove }) => {
   }
 
   return (
-    <div style={{ border:"1px solid #e2e6ed", borderRadius:8, overflow:"hidden",
+    <div style={{ border:"1px solid rgba(255,255,255,0.48)", borderRadius:16, overflow:"hidden",
+      background:"rgba(255,255,255,0.45)", backdropFilter:"blur(20px)", WebkitBackdropFilter:"blur(20px)",
       height:600, display:"flex", flexDirection:"column" }}>
       {toolbar}{pagesList}
     </div>
@@ -766,13 +816,13 @@ const DossierView = ({ st, sid, onTitleChange }) => {
     <div style={{ display:"flex", flexDirection:"column", padding:"20px 26px", gap:22 }}>
       <div>
         <E defaultVal={st.titre} storageKey={k("titre")} tag="h1" ph="Titre du sous-thème"
-          style={{ fontSize:22, fontWeight:700, lineHeight:1.2 }} onChange={onTitleChange} />
+          style={{ fontSize:22, fontWeight:700, lineHeight:1.2, color:"#1c1c1e" }} onChange={onTitleChange} />
       </div>
 
       <div>
         <div style={{ display:"flex", alignItems:"center", gap:12, marginBottom:12 }}>
-          <span style={{ fontSize:15, fontWeight:700 }}>📄 Document PDF</span>
-          <div style={{ flex:1, height:1, background:"#e2e6ed" }} />
+          <span style={{ fontSize:15, fontWeight:700, color:"#1c1c1e" }}>📄 Document PDF</span>
+          <div style={{ flex:1, height:1, background:"rgba(60,60,67,0.12)" }} />
         </div>
         {pdf ? (
           <PDFAnnotator pdfData={pdf} pdfName={pdfName} annotKey={sid} onRemove={clearPdf} />
@@ -781,28 +831,33 @@ const DossierView = ({ st, sid, onTitleChange }) => {
             onDrop={e => { e.preventDefault(); setDragOver(false); loadPdf(e.dataTransfer.files[0]); }}
             onDragOver={e => { e.preventDefault(); setDragOver(true); }}
             onDragLeave={() => setDragOver(false)}
-            style={{ border:`2px dashed ${dragOver?"#2d60a7":"#c4c9d4"}`, borderRadius:6, padding:"50px 20px", textAlign:"center",
-              background:dragOver?"#eaf1fb":"#fafbfc", cursor:"pointer", color:"#5a6880", fontSize:14, transition:"all .15s" }}>
+            style={{ border:`2px dashed ${dragOver?"#007AFF":"rgba(255,255,255,0.5)"}`,
+              borderRadius:16, padding:"50px 20px", textAlign:"center",
+              background:dragOver?"rgba(0,122,255,0.06)":"rgba(255,255,255,0.45)",
+              backdropFilter:"blur(12px)", WebkitBackdropFilter:"blur(12px)",
+              cursor:"pointer", color:"rgba(60,60,67,0.6)", fontSize:14, transition:"all .18s" }}>
             <div style={{ fontSize:32, marginBottom:8 }}>📄</div>
             <div style={{ fontWeight:600, marginBottom:4 }}>Glisser un PDF ici</div>
-            <div style={{ fontSize:12, color:"#8898b0" }}>ou cliquer pour parcourir</div>
+            <div style={{ fontSize:12, color:"rgba(60,60,67,0.45)" }}>ou cliquer pour parcourir</div>
           </div>
         )}
       </div>
 
-      <div style={{ borderTop:"2px solid #e2e6ed", paddingTop:20 }}>
+      <div style={{ borderTop:"1px solid rgba(60,60,67,0.10)", paddingTop:20 }}>
         <div style={{ display:"flex", alignItems:"center", gap:12, marginBottom:14 }}>
-          <span style={{ fontSize:15, fontWeight:700 }}>✍ Dissertation finale</span>
-          <div style={{ flex:1, height:1, background:"#e2e6ed" }} />
+          <span style={{ fontSize:15, fontWeight:700, color:"#1c1c1e" }}>✍ Dissertation finale</span>
+          <div style={{ flex:1, height:1, background:"rgba(60,60,67,0.12)" }} />
         </div>
-        <div style={{ background:"#f5f6f9", border:"1px dashed #c4c9d4", borderRadius:4, padding:"10px 14px", marginBottom:16, display:"flex", gap:8, alignItems:"center" }}>
-          <span style={{ fontSize:13, color:"#8898b0", flexShrink:0 }}>Sujet :</span>
+        <div style={{ background:"rgba(255,255,255,0.45)", backdropFilter:"blur(10px)", WebkitBackdropFilter:"blur(10px)",
+          border:"1px dashed rgba(255,255,255,0.5)", borderRadius:12, padding:"10px 14px", marginBottom:16, display:"flex", gap:8, alignItems:"center" }}>
+          <span style={{ fontSize:13, color:"rgba(60,60,67,0.5)", flexShrink:0 }}>Sujet :</span>
           <E defaultVal={st.dissertation || ""} storageKey={k("diss")} tag="span"
-            ph="Sujet de la dissertation..." style={{ fontSize:14, color:"#1a2332", fontWeight:500, flex:1 }} />
+            ph="Sujet de la dissertation..." style={{ fontSize:14, color:"#1c1c1e", fontWeight:500, flex:1 }} />
         </div>
         <E defaultVal="" storageKey={k("disstxt")} tag="div" ph="Rédiger la dissertation ici..."
-          style={{ fontSize:14, lineHeight:1.8, color:"#1a2332", minHeight:300, padding:"12px 14px",
-            border:"1px solid #e2e6ed", borderRadius:4, background:"#fff" }} />
+          style={{ fontSize:14, lineHeight:1.8, color:"#1c1c1e", minHeight:300, padding:"12px 14px",
+            border:"1px solid rgba(255,255,255,0.5)", borderRadius:12,
+            background:"rgba(255,255,255,0.55)", backdropFilter:"blur(12px)", WebkitBackdropFilter:"blur(12px)" }} />
       </div>
     </div>
   );
@@ -902,8 +957,9 @@ const CanvasCard = ({ card, sid, onDragStart, onResizeStart, onUpdate, onDelete,
   const active = isDragging || isResizing;
   return (
     <div style={{ position:"absolute", top:card.y, left:card.x, width:card.w, height:card.h,
-      border:`2px solid ${card.color}`, borderRadius:6, background:"#fff", overflow:"hidden",
-      boxShadow: active ? "6px 8px 22px rgba(0,0,0,.2)" : "2px 3px 8px rgba(0,0,0,.07)",
+      border:`1.5px solid ${card.color}66`, borderRadius:14, background:"rgba(255,255,255,0.72)", overflow:"hidden",
+      backdropFilter:"blur(20px) saturate(180%)", WebkitBackdropFilter:"blur(20px) saturate(180%)",
+      boxShadow: active ? "0 12px 36px rgba(0,0,0,.22),inset 0 1px 0 rgba(255,255,255,0.8)" : "0 4px 16px rgba(0,0,0,.08),inset 0 1px 0 rgba(255,255,255,0.8)",
       zIndex: active ? 100 : 1, transition: active ? "none" : "box-shadow .15s" }}>
       <div onPointerDown={onDragStart} style={{ background:card.color, padding:"4px 8px 4px 10px",
         display:"flex", alignItems:"center", gap:6, cursor:isDragging?"grabbing":"grab", userSelect:"none", flexShrink:0, touchAction:"none" }}>
@@ -921,11 +977,11 @@ const CanvasCard = ({ card, sid, onDragStart, onResizeStart, onUpdate, onDelete,
                 onDrop={e => { e.preventDefault(); loadImg(e.dataTransfer.files[0]); }} onDragOver={e => e.preventDefault()}
                 onPointerDown={e => e.stopPropagation()}
                 style={{ width:"100%", height:"100%", cursor:"pointer", overflow:"hidden", position:"relative",
-                  border:imgSrc?"none":"2px dashed #c4c9d4",
-                  background:imgSrc?"#fff":"repeating-linear-gradient(45deg,#eee,#eee 2px,#f5f5f3 2px,#f5f5f3 10px)",
+                  border:imgSrc?"none":"2px dashed rgba(255,255,255,0.5)",
+                  background:imgSrc?"rgba(255,255,255,0.6)":"rgba(255,255,255,0.25)",
                   display:"flex", alignItems:"center", justifyContent:"center" }}>
                 {imgSrc ? <img src={imgSrc} alt="" style={{ width:"100%", height:"100%", objectFit:"cover", display:"block" }} />
-                        : <div style={{ color:"#aaa", textAlign:"center", fontSize:12, userSelect:"none" }}>📷<br/>Cliquer ou glisser</div>}
+                        : <div style={{ color:"rgba(60,60,67,0.45)", textAlign:"center", fontSize:12, userSelect:"none" }}>📷<br/>Cliquer ou glisser</div>}
                 {imgSrc && <>
                   <button onClick={e => { e.stopPropagation(); setLightbox(true); }} onPointerDown={e => e.stopPropagation()}
                     style={{ position:"absolute", top:4, left:4, background:"rgba(0,0,0,.55)", color:"#fff",
@@ -1142,34 +1198,36 @@ const GeminiModal = ({ sid, onClose, onApply }) => {
   const busy = step === "extracting" || step === "calling";
 
   return ReactDOM.createPortal(
-    <div onClick={onClose} style={{ position:"fixed", inset:0, background:"rgba(10,18,30,.6)",
-      backdropFilter:"blur(3px)", zIndex:9000, display:"flex", alignItems:"center",
-      justifyContent:"center", fontFamily:"'Plus Jakarta Sans',sans-serif", padding:20 }}>
+    <div onClick={onClose} style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.35)",
+      backdropFilter:"blur(16px)", WebkitBackdropFilter:"blur(16px)", zIndex:9000, display:"flex", alignItems:"center",
+      justifyContent:"center", padding:20 }}>
       <div onClick={e => e.stopPropagation()} className="anim-fadein"
-        style={{ background:"#fff", borderRadius:18, width:"100%", maxWidth:460,
-          padding:"30px 32px", boxShadow:"0 24px 64px rgba(0,0,0,.25)" }}>
+        style={{ background:"rgba(255,255,255,0.78)", backdropFilter:"blur(40px) saturate(200%)", WebkitBackdropFilter:"blur(40px) saturate(200%)",
+          border:"1px solid rgba(255,255,255,0.65)",
+          borderRadius:28, width:"100%", maxWidth:460,
+          padding:"30px 32px", boxShadow:"0 24px 64px rgba(0,0,0,0.18),inset 0 1px 0 rgba(255,255,255,0.8)" }}>
 
         {/* En-tête */}
         <div style={{ display:"flex", alignItems:"center", gap:14, marginBottom:24 }}>
-          <div style={{ width:46, height:46, borderRadius:13,
-            background:"linear-gradient(135deg,#2454A0 0%,#6366f1 100%)",
+          <div style={{ width:46, height:46, borderRadius:14,
+            background:"linear-gradient(135deg,#007AFF 0%,#5856D6 100%)",
             display:"flex", alignItems:"center", justifyContent:"center",
-            fontSize:24, flexShrink:0, boxShadow:"0 4px 14px rgba(99,102,241,.35)" }}>✨</div>
+            fontSize:24, flexShrink:0, boxShadow:"0 4px 14px rgba(0,122,255,0.35)" }}>✨</div>
           <div>
-            <div style={{ fontSize:17, fontWeight:800, color:"#1a2332" }}>Générer avec Gemini</div>
-            <div style={{ fontSize:12, color:"#8898b0", marginTop:2 }}>Carte mentale DNL depuis le PDF du dossier</div>
+            <div style={{ fontSize:17, fontWeight:800, color:"#1c1c1e" }}>Générer avec Gemini</div>
+            <div style={{ fontSize:12, color:"rgba(60,60,67,0.55)", marginTop:2 }}>Carte mentale DNL depuis le PDF du dossier</div>
           </div>
           <div style={{ flex:1 }} />
-          <button onClick={onClose} style={{ width:30, height:30, borderRadius:"50%", background:"#f0f2f5",
-            border:"none", cursor:"pointer", fontSize:17, color:"#5a6880", lineHeight:1 }}>×</button>
+          <button onClick={onClose} style={{ width:30, height:30, borderRadius:"50%", background:"rgba(120,120,128,0.16)",
+            border:"none", cursor:"pointer", fontSize:17, color:"rgba(60,60,67,0.6)", lineHeight:1 }}>×</button>
         </div>
 
         {/* Progression */}
         {busy && (
-          <div style={{ background:"#f0f4ff", borderRadius:10, padding:"13px 16px", marginBottom:16,
-            display:"flex", alignItems:"center", gap:10, border:"1px solid #dde8ff" }}>
-            <div style={{ fontSize:16, color:"#6366f1" }}>⟳</div>
-            <div style={{ fontSize:13, color:"#2454A0", fontWeight:600 }}>
+          <div style={{ background:"rgba(0,122,255,0.08)", borderRadius:14, padding:"13px 16px", marginBottom:16,
+            display:"flex", alignItems:"center", gap:10, border:"1px solid rgba(0,122,255,0.2)" }}>
+            <div style={{ fontSize:16, color:"#007AFF" }}>⟳</div>
+            <div style={{ fontSize:13, color:"#007AFF", fontWeight:600 }}>
               {step === "extracting" ? "Extraction du texte PDF…" : "Gemini génère ta carte mentale…"}
             </div>
           </div>
@@ -1177,25 +1235,25 @@ const GeminiModal = ({ sid, onClose, onApply }) => {
 
         {/* Erreur */}
         {step === "error" && (
-          <div style={{ background:"#fef2f2", border:"1px solid #fecaca", borderRadius:10,
+          <div style={{ background:"rgba(255,59,48,0.08)", border:"1px solid rgba(255,59,48,0.2)", borderRadius:14,
             padding:"13px 16px", marginBottom:16, whiteSpace:"pre-line" }}>
-            <div style={{ fontSize:12, fontWeight:700, color:"#dc2626", marginBottom:4 }}>Erreur</div>
-            <div style={{ fontSize:12, color:"#b91c1c" }}>{errMsg}</div>
+            <div style={{ fontSize:12, fontWeight:700, color:"#FF3B30", marginBottom:4 }}>Erreur</div>
+            <div style={{ fontSize:12, color:"#FF3B30" }}>{errMsg}</div>
           </div>
         )}
 
         {/* Boutons */}
         <div style={{ display:"flex", gap:10 }}>
-          <button onClick={onClose} style={{ flex:1, padding:"11px", background:"#f5f6f9",
-            color:"#5a6880", border:"1px solid #d8dde8", borderRadius:9, cursor:"pointer",
+          <button onClick={onClose} style={{ flex:1, padding:"12px", background:"rgba(120,120,128,0.14)",
+            color:"rgba(60,60,67,0.7)", border:"none", borderRadius:14, cursor:"pointer",
             fontSize:14, fontFamily:"inherit" }}>Annuler</button>
           <button onClick={run} disabled={busy}
-            style={{ flex:2, padding:"11px",
-              background:busy?"#94a3b8":"linear-gradient(135deg,#2454A0,#6366f1)",
-              color:"#fff", border:"none", borderRadius:9,
+            style={{ flex:2, padding:"12px",
+              background:busy?"rgba(120,120,128,0.16)":"linear-gradient(135deg,#007AFF,#5856D6)",
+              color:busy?"rgba(60,60,67,0.4)":"#fff", border:"none", borderRadius:14,
               cursor:busy?"default":"pointer",
               fontSize:14, fontWeight:700, fontFamily:"inherit",
-              boxShadow:busy?"none":"0 4px 14px rgba(99,102,241,.35)",
+              boxShadow:busy?"none":"0 4px 14px rgba(0,122,255,0.35)",
               transition:"all .2s" }}>
             {busy ? "Génération…" : "✨ Générer la carte mentale"}
           </button>
@@ -1280,28 +1338,31 @@ const MindmapCanvas = ({ sid }) => {
 
   return (
     <div style={{ display:"flex", flexDirection:"column", flex:1, minHeight:0 }}>
-      <div style={{ height:46, flexShrink:0, background:"#fff", borderBottom:"1px solid #e2e6ed",
+      <div style={{ height:50, flexShrink:0,
+        background:"rgba(255,255,255,0.60)", backdropFilter:"blur(20px) saturate(180%)", WebkitBackdropFilter:"blur(20px) saturate(180%)",
+        borderBottom:"1px solid rgba(255,255,255,0.48)",
         display:"flex", alignItems:"center", padding:"0 20px", gap:10 }}>
-        <span style={{ fontSize:13, color:"#8898b0" }}>Glisser · zoom (Ctrl+molette)</span>
+        <span style={{ fontSize:13, color:"rgba(60,60,67,0.45)" }}>Glisser · zoom (Ctrl+molette)</span>
         <div style={{ flex:1 }} />
         <div style={{ display:"flex", alignItems:"center", gap:4, marginRight:4 }}>
           <button onClick={() => setZoom(z => Math.max(0.3,z*0.9))}
-            style={{ width:28, height:28, background:"#f5f6f9", color:"#5a6880", border:"1px solid #d8dde8", borderRadius:5, cursor:"pointer", fontSize:14 }}>−</button>
+            style={{ width:28, height:28, background:"rgba(120,120,128,0.14)", color:"rgba(60,60,67,0.7)", border:"none", borderRadius:8, cursor:"pointer", fontSize:14 }}>−</button>
           <button onClick={() => setZoom(1)}
-            style={{ padding:"0 8px", height:28, background:"#f5f6f9", color:"#5a6880", border:"1px solid #d8dde8", borderRadius:5, cursor:"pointer", fontSize:11, minWidth:48 }}>
+            style={{ padding:"0 8px", height:28, background:"rgba(120,120,128,0.14)", color:"rgba(60,60,67,0.7)", border:"none", borderRadius:8, cursor:"pointer", fontSize:11, minWidth:48 }}>
             {Math.round(zoom*100)}%</button>
           <button onClick={() => setZoom(z => Math.min(2,z*1.1))}
-            style={{ width:28, height:28, background:"#f5f6f9", color:"#5a6880", border:"1px solid #d8dde8", borderRadius:5, cursor:"pointer", fontSize:14 }}>+</button>
+            style={{ width:28, height:28, background:"rgba(120,120,128,0.14)", color:"rgba(60,60,67,0.7)", border:"none", borderRadius:8, cursor:"pointer", fontSize:14 }}>+</button>
         </div>
-        <button onClick={() => addCard("image")} style={{ padding:"5px 14px", background:"#f5f6f9", color:"#5a6880", border:"1px solid #d8dde8", borderRadius:5, cursor:"pointer", fontSize:13 }}>+ Image</button>
-        <button onClick={() => addCard("text")} style={{ padding:"5px 14px", background:"#f5f6f9", color:"#5a6880", border:"1px solid #d8dde8", borderRadius:5, cursor:"pointer", fontSize:13 }}>+ Texte</button>
+        <button onClick={() => addCard("image")} style={{ padding:"5px 14px", background:"rgba(120,120,128,0.14)", color:"rgba(60,60,67,0.7)", border:"none", borderRadius:10, cursor:"pointer", fontSize:13 }}>+ Image</button>
+        <button onClick={() => addCard("text")} style={{ padding:"5px 14px", background:"rgba(120,120,128,0.14)", color:"rgba(60,60,67,0.7)", border:"none", borderRadius:10, cursor:"pointer", fontSize:13 }}>+ Texte</button>
         <button onClick={() => setShowGemini(true)}
-          style={{ padding:"5px 16px", background:"linear-gradient(135deg,#2454A0,#6366f1)",
-            color:"#fff", border:"none", borderRadius:5, cursor:"pointer", fontSize:13, fontWeight:600,
-            boxShadow:"0 2px 8px rgba(99,102,241,.35)" }}>✨ Générer avec l'IA</button>
+          style={{ padding:"5px 16px", background:"linear-gradient(135deg,#007AFF,#5856D6)",
+            color:"#fff", border:"none", borderRadius:10, cursor:"pointer", fontSize:13, fontWeight:600,
+            boxShadow:"0 2px 8px rgba(0,122,255,0.35)" }}>✨ Générer avec l'IA</button>
       </div>
-      <div ref={containerRef} style={{ flex:1, minHeight:0, overflow:"auto", position:"relative", background:"#f5f6f9",
-        backgroundImage:"radial-gradient(circle, #c4c9d4 1px, transparent 1px)",
+      <div ref={containerRef} style={{ flex:1, minHeight:0, overflow:"auto", position:"relative",
+        background:"rgba(255,255,255,0.18)",
+        backgroundImage:"radial-gradient(circle, rgba(120,120,128,0.25) 1px, transparent 1px)",
         backgroundSize:`${22*zoom}px ${22*zoom}px`,
         cursor: dragging?"grabbing":resizing?"se-resize":"default" }}>
         <div style={{ width:3000*zoom, height:2000*zoom, position:"relative" }}>
@@ -1383,51 +1444,70 @@ const QuizView = ({ sid }) => {
   const knownCnt = cards.filter(c=>c.known).length;
   const pct = cards.length ? (knownCnt/cards.length)*100 : 0;
   return (
-    <div style={{ flex:1, display:"flex", flexDirection:"column", background:"#f5f6f9" }}>
-      <div data-np style={{ height:46, flexShrink:0, background:"#fff", borderBottom:"1px solid #e2e6ed",
+    <div style={{ flex:1, display:"flex", flexDirection:"column", background:"transparent" }}>
+      <div data-np style={{ height:50, flexShrink:0,
+        background:"rgba(255,255,255,0.60)", backdropFilter:"blur(20px) saturate(180%)", WebkitBackdropFilter:"blur(20px) saturate(180%)",
+        borderBottom:"1px solid rgba(255,255,255,0.48)",
         display:"flex", alignItems:"center", padding:"0 20px", gap:12 }}>
-        <span style={{ fontSize:13, fontWeight:600, color:"#2d60a7" }}>{knownCnt} / {cards.length} connus</span>
-        <div style={{ width:90, height:6, background:"#e2e6ed", borderRadius:3, overflow:"hidden" }}>
-          <div style={{ height:"100%", width:`${pct}%`, background:"#2d60a7", borderRadius:3, transition:"width .3s" }} />
+        <span style={{ fontSize:13, fontWeight:600, color:"#007AFF" }}>{knownCnt} / {cards.length} connus</span>
+        <div style={{ width:90, height:5, background:"rgba(0,122,255,0.15)", borderRadius:4, overflow:"hidden" }}>
+          <div style={{ height:"100%", width:`${pct}%`, background:"#007AFF", borderRadius:4, transition:"width .4s cubic-bezier(0.34,1.2,0.64,1)" }} />
         </div>
         <div style={{ flex:1 }} />
-        <button onClick={shuffle} style={{ padding:"5px 12px", background:"#f5f6f9", color:"#5a6880", border:"1px solid #d8dde8", borderRadius:5, cursor:"pointer", fontSize:13 }}>🔀 Mélanger</button>
-        <button onClick={addCard} style={{ padding:"5px 14px", background:"#2d60a7", color:"#fff", border:"none", borderRadius:5, cursor:"pointer", fontSize:13 }}>+ Carte</button>
+        <button onClick={shuffle} style={{ padding:"5px 12px", background:"rgba(120,120,128,0.14)", color:"rgba(60,60,67,0.7)", border:"none", borderRadius:10, cursor:"pointer", fontSize:13 }}>🔀 Mélanger</button>
+        <button onClick={addCard} style={{ padding:"5px 14px", background:"#007AFF", color:"#fff", border:"none", borderRadius:10, cursor:"pointer", fontSize:13, fontWeight:600, boxShadow:"0 2px 8px rgba(0,122,255,0.3)" }}>+ Carte</button>
       </div>
       <div style={{ flex:1, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", padding:"28px 24px", gap:22 }}>
-        <div style={{ fontSize:13, color:"#8898b0" }}>{idx+1} / {cards.length}</div>
+        <div style={{ fontSize:13, color:"rgba(60,60,67,0.45)" }}>{idx+1} / {cards.length}</div>
         <div onClick={() => setFlipped(f=>!f)} style={{ width:"100%", maxWidth:640, height:290, perspective:"1400px", cursor:"pointer" }}>
           <div style={{ width:"100%", height:"100%", position:"relative", transformStyle:"preserve-3d",
-            transition:"transform 0.42s cubic-bezier(.4,0,.2,1)", transform:flipped?"rotateY(180deg)":"rotateY(0deg)" }}>
-            <div style={{ position:"absolute", inset:0, backfaceVisibility:"hidden", background:"#fff", borderRadius:12,
-              border:"2px solid #e2e6ed", boxShadow:"0 4px 20px rgba(0,0,0,.07)",
+            transition:"transform 0.45s cubic-bezier(.4,0,.2,1)", transform:flipped?"rotateY(180deg)":"rotateY(0deg)" }}>
+            <div style={{ position:"absolute", inset:0, backfaceVisibility:"hidden",
+              background:"rgba(255,255,255,0.75)", backdropFilter:"blur(24px) saturate(180%)", WebkitBackdropFilter:"blur(24px) saturate(180%)",
+              borderRadius:22, border:"1px solid rgba(255,255,255,0.62)",
+              boxShadow:"0 8px 32px rgba(0,0,0,0.09),inset 0 1px 0 rgba(255,255,255,0.8)",
               display:"flex", flexDirection:"column", padding:"28px 32px" }}>
-              <div style={{ fontSize:11, fontWeight:600, color:"#8898b0", textTransform:"uppercase", letterSpacing:".08em", marginBottom:14 }}>Question</div>
+              <div style={{ fontSize:11, fontWeight:600, color:"rgba(60,60,67,0.42)", textTransform:"uppercase", letterSpacing:".08em", marginBottom:14 }}>Question</div>
               <CardField storageKey={`${sid}_q_${cur.id}_q`} defaultVal={cur.question} ph="Rédigez votre question..."
-                style={{ flex:1, fontSize:20, fontWeight:600, color:"#1a2332", lineHeight:1.5 }} />
-              <div style={{ fontSize:12, color:"#c4c9d4", textAlign:"center", marginTop:12 }}>↓ Cliquer pour révéler</div>
+                style={{ flex:1, fontSize:20, fontWeight:600, color:"#1c1c1e", lineHeight:1.5 }} />
+              <div style={{ fontSize:12, color:"rgba(60,60,67,0.3)", textAlign:"center", marginTop:12 }}>↓ Cliquer pour révéler</div>
             </div>
             <div style={{ position:"absolute", inset:0, backfaceVisibility:"hidden", transform:"rotateY(180deg)",
-              background:"#eef4ff", borderRadius:12, border:"2px solid #2d60a7", boxShadow:"0 4px 20px rgba(45,96,167,.13)",
+              background:"rgba(0,122,255,0.10)", backdropFilter:"blur(24px) saturate(180%)", WebkitBackdropFilter:"blur(24px) saturate(180%)",
+              borderRadius:22, border:"1px solid rgba(0,122,255,0.3)",
+              boxShadow:"0 8px 32px rgba(0,122,255,0.12),inset 0 1px 0 rgba(255,255,255,0.6)",
               display:"flex", flexDirection:"column", padding:"28px 32px" }}>
-              <div style={{ fontSize:11, fontWeight:600, color:"#2d60a7", textTransform:"uppercase", letterSpacing:".08em", marginBottom:14 }}>Réponse</div>
+              <div style={{ fontSize:11, fontWeight:600, color:"#007AFF", textTransform:"uppercase", letterSpacing:".08em", marginBottom:14 }}>Réponse</div>
               <CardField storageKey={`${sid}_q_${cur.id}_a`} defaultVal={cur.answer} ph="Rédigez la réponse..."
-                style={{ flex:1, fontSize:16, color:"#2a3a50", lineHeight:1.7 }} />
+                style={{ flex:1, fontSize:16, color:"#1c1c1e", lineHeight:1.7 }} />
             </div>
           </div>
         </div>
         <div style={{ display:"flex", alignItems:"center", gap:12 }}>
           <button onClick={()=>go(-1)} disabled={idx===0}
-            style={{ width:40, height:40, borderRadius:"50%", border:"1px solid #d8dde8", background:idx>0?"#fff":"transparent", cursor:idx>0?"pointer":"default", color:idx>0?"#1a2332":"#d0d5de", fontSize:18 }}>←</button>
-          <button onClick={toggleKnown} style={{ padding:"8px 20px", borderRadius:8, cursor:"pointer", fontSize:14, fontWeight:600, border:"1px solid",
-            background:cur.known?"#e8f5e9":"#fff3e0", color:cur.known?"#2e7d32":"#e65100", borderColor:cur.known?"#a5d6a7":"#ffcc80" }}>
+            style={{ width:42, height:42, borderRadius:"50%", border:"none",
+              background:idx>0?"rgba(255,255,255,0.65)":"transparent",
+              backdropFilter:idx>0?"blur(12px)":"none", WebkitBackdropFilter:idx>0?"blur(12px)":"none",
+              boxShadow:idx>0?"0 2px 10px rgba(0,0,0,0.08)":"none",
+              cursor:idx>0?"pointer":"default", color:idx>0?"#1c1c1e":"rgba(60,60,67,0.2)", fontSize:18 }}>←</button>
+          <button onClick={toggleKnown} style={{ padding:"9px 22px", borderRadius:14, cursor:"pointer", fontSize:14, fontWeight:600, border:"none",
+            background:cur.known?"rgba(52,199,89,0.14)":"rgba(255,159,10,0.14)",
+            color:cur.known?"#34C759":"#FF9500",
+            boxShadow:cur.known?"0 2px 8px rgba(52,199,89,0.2)":"0 2px 8px rgba(255,159,10,0.2)" }}>
             {cur.known ? "✓ Connu" : "✗ À revoir"}</button>
           <button onClick={()=>setFlipped(f=>!f)}
-            style={{ padding:"8px 22px", borderRadius:8, background:"#2d60a7", color:"#fff", border:"none", cursor:"pointer", fontSize:14, fontWeight:600 }}>Retourner</button>
+            style={{ padding:"9px 24px", borderRadius:14, background:"#007AFF", color:"#fff", border:"none", cursor:"pointer", fontSize:14, fontWeight:600,
+              boxShadow:"0 3px 12px rgba(0,122,255,0.35)" }}>Retourner</button>
           <button onClick={()=>go(1)} disabled={idx===cards.length-1}
-            style={{ width:40, height:40, borderRadius:"50%", border:"1px solid #d8dde8", background:idx<cards.length-1?"#fff":"transparent", cursor:idx<cards.length-1?"pointer":"default", color:idx<cards.length-1?"#1a2332":"#d0d5de", fontSize:18 }}>→</button>
+            style={{ width:42, height:42, borderRadius:"50%", border:"none",
+              background:idx<cards.length-1?"rgba(255,255,255,0.65)":"transparent",
+              backdropFilter:idx<cards.length-1?"blur(12px)":"none", WebkitBackdropFilter:idx<cards.length-1?"blur(12px)":"none",
+              boxShadow:idx<cards.length-1?"0 2px 10px rgba(0,0,0,0.08)":"none",
+              cursor:idx<cards.length-1?"pointer":"default", color:idx<cards.length-1?"#1c1c1e":"rgba(60,60,67,0.2)", fontSize:18 }}>→</button>
           <button onClick={delCard} disabled={cards.length<=1}
-            style={{ width:36, height:36, borderRadius:"50%", border:"1px solid #fecaca", background:cards.length>1?"#fff5f5":"transparent", cursor:cards.length>1?"pointer":"default", color:cards.length>1?"#dc2626":"#d0d5de", fontSize:16 }}>×</button>
+            style={{ width:38, height:38, borderRadius:"50%", border:"none",
+              background:cards.length>1?"rgba(255,59,48,0.12)":"transparent",
+              cursor:cards.length>1?"pointer":"default", color:cards.length>1?"#FF3B30":"rgba(60,60,67,0.2)", fontSize:16 }}>×</button>
         </div>
       </div>
     </div>
@@ -1450,7 +1530,7 @@ const ThemeLabel = ({ themeId, defaultTitle, open }) => {
       onClick={e => e.stopPropagation()} onMouseDown={e => e.stopPropagation()}
       onBlur={e => localStorage.setItem(lsKey, e.currentTarget.textContent)}
       data-ph="Nom du thème"
-      style={{ flex:1, outline:"none", cursor:"text", color:open?"#fff":"#8898b0", fontSize:13.5, fontWeight:600 }} />
+      style={{ flex:1, outline:"none", cursor:"text", color:open?"#fff":"rgba(255,255,255,0.45)", fontSize:13.5, fontWeight:600 }} />
   );
 };
 
@@ -1462,10 +1542,13 @@ const Sidebar = ({ themes, activePath, onSelect, stTitles, onAddTheme, onDeleteT
   const toggle = (id) => setExpanded(prev => { const n=new Set(prev); n.has(id)?n.delete(id):n.add(id); return n; });
   const totalST = themes.reduce((acc,t) => acc+t.sousThemes.length, 0);
   return (
-    <aside data-np style={{ width:240, flexShrink:0, background:"#1d2b42", color:"#e8ecf2", display:"flex", flexDirection:"column", overflowY:"auto" }}>
-      <div style={{ padding:"18px 20px 14px", borderBottom:"1px solid #28395a" }}>
+    <aside data-np style={{ width:240, flexShrink:0,
+      background:"rgba(18,18,22,0.82)", backdropFilter:"blur(28px) saturate(180%)", WebkitBackdropFilter:"blur(28px) saturate(180%)",
+      borderRight:"1px solid rgba(255,255,255,0.09)",
+      color:"rgba(255,255,255,0.88)", display:"flex", flexDirection:"column", overflowY:"auto" }}>
+      <div style={{ padding:"18px 20px 14px", borderBottom:"1px solid rgba(255,255,255,0.07)" }}>
         <div style={{ fontSize:15, fontWeight:700, color:"#fff" }}>{subjectNom || "Matière"}</div>
-        <div style={{ fontSize:12, color:"#6a7f98", marginTop:2 }}>{subjectSoustitre || ""}</div>
+        <div style={{ fontSize:12, color:"rgba(255,255,255,0.42)", marginTop:2 }}>{subjectSoustitre || ""}</div>
       </div>
 
       <div style={{ flex:1, padding:"8px 0", overflowY:"auto" }}>
@@ -1475,20 +1558,20 @@ const Sidebar = ({ themes, activePath, onSelect, stTitles, onAddTheme, onDeleteT
             <div key={theme.id}>
               <div style={{ display:"flex", alignItems:"center", padding:"8px 12px 8px 16px", gap:6 }}>
                 <button onClick={() => toggle(theme.id)} style={{ background:"none", border:"none", cursor:"pointer",
-                  color:open?"#fff":"#6a7f98", padding:0, fontSize:9, flexShrink:0 }}>{open?"▼":"▶"}</button>
+                  color:open?"#fff":"rgba(255,255,255,0.4)", padding:0, fontSize:9, flexShrink:0 }}>{open?"▼":"▶"}</button>
                 <ThemeLabel themeId={theme.id} defaultTitle={theme.titre} open={open} />
                 <button onClick={() => onAddST(theme.id)} title="Ajouter un sous-thème"
-                  style={{ background:"none", border:"none", cursor:"pointer", color:"#4a6080",
+                  style={{ background:"none", border:"none", cursor:"pointer", color:"rgba(255,255,255,0.28)",
                     fontSize:16, padding:"0 3px", flexShrink:0, lineHeight:1,
                     transition:"color .15s" }}
-                  onMouseEnter={e => e.currentTarget.style.color="#74aadf"}
-                  onMouseLeave={e => e.currentTarget.style.color="#4a6080"}>+</button>
+                  onMouseEnter={e => e.currentTarget.style.color="#60a5fa"}
+                  onMouseLeave={e => e.currentTarget.style.color="rgba(255,255,255,0.28)"}>+</button>
                 <button onClick={() => onDeleteTheme(theme.id)} title="Supprimer ce thème"
-                  style={{ background:"none", border:"none", cursor:"pointer", color:"#3a4e68",
+                  style={{ background:"none", border:"none", cursor:"pointer", color:"rgba(255,255,255,0.18)",
                     fontSize:15, padding:"0 3px", flexShrink:0, lineHeight:1,
                     transition:"color .15s" }}
                   onMouseEnter={e => e.currentTarget.style.color="#f87171"}
-                  onMouseLeave={e => e.currentTarget.style.color="#3a4e68"}>×</button>
+                  onMouseLeave={e => e.currentTarget.style.color="rgba(255,255,255,0.18)"}>×</button>
               </div>
               {open && theme.sousThemes.map((st) => {
                 const active = activePath[0]===theme.id && activePath[1]===st.id;
@@ -1496,17 +1579,19 @@ const Sidebar = ({ themes, activePath, onSelect, stTitles, onAddTheme, onDeleteT
                 return (
                   <div key={st.id} style={{ display:"flex", alignItems:"stretch" }}>
                     <button onClick={() => onSelect(theme.id, st.id)} style={{ flex:1, textAlign:"left",
-                      padding:"6px 8px 6px 32px", background:active?"#2d60a7":"none", border:"none", cursor:"pointer",
-                      borderLeft:active?"3px solid #74aadf":"3px solid transparent",
-                      color:active?"#fff":"#7a8da4", fontSize:13, lineHeight:1.4 }}>
-                      <span style={{ marginRight:6, opacity:.4 }}>•</span>{label}
+                      padding:"7px 8px 7px 32px",
+                      background:active?"rgba(0,122,255,0.22)":"none", border:"none", cursor:"pointer",
+                      borderLeft:active?"3px solid #007AFF":"3px solid transparent",
+                      borderRadius: active?"0 10px 10px 0":0,
+                      color:active?"#fff":"rgba(255,255,255,0.52)", fontSize:13, lineHeight:1.4 }}>
+                      <span style={{ marginRight:6, opacity:.35 }}>•</span>{label}
                     </button>
                     <button onClick={() => onDeleteST(theme.id, st.id)} title="Supprimer"
-                      style={{ background:"none", border:"none", cursor:"pointer", color:"#3a4e68",
+                      style={{ background:"none", border:"none", cursor:"pointer", color:"rgba(255,255,255,0.18)",
                         fontSize:14, padding:"0 10px 0 4px", flexShrink:0,
                         transition:"color .15s" }}
                       onMouseEnter={e => e.currentTarget.style.color="#f87171"}
-                      onMouseLeave={e => e.currentTarget.style.color="#3a4e68"}>×</button>
+                      onMouseLeave={e => e.currentTarget.style.color="rgba(255,255,255,0.18)"}>×</button>
                   </div>
                 );
               })}
@@ -1515,16 +1600,16 @@ const Sidebar = ({ themes, activePath, onSelect, stTitles, onAddTheme, onDeleteT
         })}
       </div>
 
-      <div style={{ padding:"12px 16px", borderTop:"1px solid #28395a", flexShrink:0 }}>
+      <div style={{ padding:"12px 16px", borderTop:"1px solid rgba(255,255,255,0.07)", flexShrink:0 }}>
         <button onClick={onAddTheme}
-          style={{ width:"100%", padding:"8px 12px", background:"rgba(255,255,255,.06)", border:"1px dashed #3a4e68",
-            borderRadius:6, color:"#6a7f98", cursor:"pointer", fontSize:13, fontFamily:"inherit", textAlign:"left",
-            transition:"all .15s" }}
-          onMouseEnter={e => { e.currentTarget.style.background="rgba(116,170,223,.1)"; e.currentTarget.style.color="#74aadf"; e.currentTarget.style.borderColor="#74aadf"; }}
-          onMouseLeave={e => { e.currentTarget.style.background="rgba(255,255,255,.06)"; e.currentTarget.style.color="#6a7f98"; e.currentTarget.style.borderColor="#3a4e68"; }}>
+          style={{ width:"100%", padding:"9px 12px", background:"rgba(255,255,255,0.07)", border:"1px dashed rgba(255,255,255,0.2)",
+            borderRadius:12, color:"rgba(255,255,255,0.42)", cursor:"pointer", fontSize:13, fontFamily:"inherit", textAlign:"left",
+            transition:"all .18s" }}
+          onMouseEnter={e => { e.currentTarget.style.background="rgba(0,122,255,0.18)"; e.currentTarget.style.color="#60a5fa"; e.currentTarget.style.borderColor="#007AFF"; }}
+          onMouseLeave={e => { e.currentTarget.style.background="rgba(255,255,255,0.07)"; e.currentTarget.style.color="rgba(255,255,255,0.42)"; e.currentTarget.style.borderColor="rgba(255,255,255,0.2)"; }}>
           + Ajouter un thème
         </button>
-        <div style={{ marginTop:8, fontSize:11, color:"#4a5e78" }}>
+        <div style={{ marginTop:8, fontSize:11, color:"rgba(255,255,255,0.28)" }}>
           {themes.length} thème{themes.length!==1?"s":""} · {totalST} sous-thème{totalST!==1?"s":""}
         </div>
       </div>
@@ -1560,23 +1645,24 @@ const LoginScreen = () => {
   const features = ["Dossiers de révision structurés", "Canvas Mindmap interactif", "Flashcards intelligentes", "Sync multi-appareils"];
 
   return (
-    <div style={{ height:"100vh", display:"flex", fontFamily:"'Plus Jakarta Sans',sans-serif", overflow:"hidden" }}>
+    <div style={{ height:"100vh", display:"flex", overflow:"hidden" }}>
 
-      {/* Panneau gauche — branding */}
+      {/* Panneau gauche — branding glass sombre */}
       {!isMobile && (
         <div style={{ flex:"0 0 46%", position:"relative", overflow:"hidden",
-          background:"linear-gradient(145deg, #0d1a2a 0%, #1d2b42 45%, #162338 100%)",
+          background:"rgba(10,12,20,0.78)", backdropFilter:"blur(32px) saturate(180%)", WebkitBackdropFilter:"blur(32px) saturate(180%)",
+          borderRight:"1px solid rgba(255,255,255,0.07)",
           display:"flex", alignItems:"center", justifyContent:"center" }}>
 
           {/* Blobs animés */}
           <div className="anim-blob1" style={{ position:"absolute", width:420, height:420, borderRadius:"50%",
-            background:"radial-gradient(circle, rgba(36,84,160,.4) 0%, transparent 70%)",
+            background:"radial-gradient(circle, rgba(0,122,255,0.45) 0%, transparent 70%)",
             top:"-80px", left:"-80px", pointerEvents:"none" }} />
           <div className="anim-blob2" style={{ position:"absolute", width:340, height:340, borderRadius:"50%",
-            background:"radial-gradient(circle, rgba(184,88,32,.28) 0%, transparent 70%)",
+            background:"radial-gradient(circle, rgba(88,86,214,0.38) 0%, transparent 70%)",
             bottom:"40px", right:"-60px", pointerEvents:"none" }} />
-          <div style={{ position:"absolute", width:200, height:200, borderRadius:"50%",
-            background:"radial-gradient(circle, rgba(36,84,160,.18) 0%, transparent 70%)",
+          <div style={{ position:"absolute", width:220, height:220, borderRadius:"50%",
+            background:"radial-gradient(circle, rgba(236,72,153,0.22) 0%, transparent 70%)",
             bottom:"160px", left:"60px", pointerEvents:"none" }} />
 
           {/* Grille décorative */}
@@ -1586,26 +1672,26 @@ const LoginScreen = () => {
 
           {/* Contenu */}
           <div className="anim-fadein" style={{ position:"relative", textAlign:"center", padding:"48px 52px" }}>
-            <div style={{ display:"inline-flex", width:72, height:72, borderRadius:20,
-              background:"linear-gradient(135deg, #2454A0, #1d3a7a)", alignItems:"center", justifyContent:"center",
-              fontSize:32, marginBottom:24, boxShadow:"0 8px 32px rgba(36,84,160,.45)" }}>📚</div>
+            <div style={{ display:"inline-flex", width:76, height:76, borderRadius:22,
+              background:"linear-gradient(135deg, #007AFF, #5856D6)", alignItems:"center", justifyContent:"center",
+              fontSize:34, marginBottom:26, boxShadow:"0 8px 32px rgba(0,122,255,0.45)" }}>📚</div>
 
             <div style={{ fontSize:36, fontWeight:800, color:"#fff", letterSpacing:"-.02em", marginBottom:8 }}>StudySpace</div>
-            <div style={{ fontSize:14, color:"rgba(255,255,255,.45)", lineHeight:1.7, maxWidth:280, margin:"0 auto 36px" }}>
+            <div style={{ fontSize:14, color:"rgba(255,255,255,0.42)", lineHeight:1.7, maxWidth:280, margin:"0 auto 36px" }}>
               Organise tes révisions, maîtrise tes cours et révise intelligemment.
             </div>
 
             <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
               {features.map((f, i) => (
                 <div key={i} style={{ display:"flex", alignItems:"center", gap:12,
-                  background:"rgba(255,255,255,.06)", backdropFilter:"blur(8px)",
-                  borderRadius:10, padding:"11px 16px", border:"1px solid rgba(255,255,255,.08)",
+                  background:"rgba(255,255,255,0.07)", backdropFilter:"blur(12px)", WebkitBackdropFilter:"blur(12px)",
+                  borderRadius:14, padding:"11px 16px", border:"1px solid rgba(255,255,255,0.10)",
                   textAlign:"left" }}>
-                  <div style={{ width:20, height:20, borderRadius:"50%", background:"rgba(36,84,160,.6)",
+                  <div style={{ width:20, height:20, borderRadius:"50%", background:"rgba(0,122,255,0.55)",
                     display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
-                    <svg width="10" height="10" viewBox="0 0 10 10"><path d="M1.5 5l2.5 2.5 4.5-4.5" stroke="#74aadf" strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                    <svg width="10" height="10" viewBox="0 0 10 10"><path d="M1.5 5l2.5 2.5 4.5-4.5" stroke="#fff" strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round"/></svg>
                   </div>
-                  <span style={{ color:"rgba(255,255,255,.72)", fontSize:13.5 }}>{f}</span>
+                  <span style={{ color:"rgba(255,255,255,0.75)", fontSize:13.5 }}>{f}</span>
                 </div>
               ))}
             </div>
@@ -1613,25 +1699,26 @@ const LoginScreen = () => {
         </div>
       )}
 
-      {/* Panneau droit — formulaire */}
+      {/* Panneau droit — formulaire glass clair */}
       <div style={{ flex:1, display:"flex", alignItems:"center", justifyContent:"center",
-        background:"#fff", padding:"40px 28px", overflowY:"auto" }}>
+        background:"rgba(255,255,255,0.52)", backdropFilter:"blur(24px) saturate(180%)", WebkitBackdropFilter:"blur(24px) saturate(180%)",
+        padding:"40px 28px", overflowY:"auto" }}>
         <div className="anim-fadein" style={{ width:"100%", maxWidth:400 }}>
 
           {isMobile && (
             <div style={{ textAlign:"center", marginBottom:28 }}>
-              <div style={{ display:"inline-flex", width:56, height:56, borderRadius:16,
-                background:"linear-gradient(135deg, #2454A0, #1d3a7a)", alignItems:"center", justifyContent:"center",
-                fontSize:26, marginBottom:12 }}>📚</div>
-              <div style={{ fontSize:22, fontWeight:800, color:"#1a2332" }}>StudySpace</div>
+              <div style={{ display:"inline-flex", width:60, height:60, borderRadius:18,
+                background:"linear-gradient(135deg, #007AFF, #5856D6)", alignItems:"center", justifyContent:"center",
+                fontSize:28, marginBottom:12, boxShadow:"0 4px 18px rgba(0,122,255,0.4)" }}>📚</div>
+              <div style={{ fontSize:22, fontWeight:800, color:"#1c1c1e" }}>StudySpace</div>
             </div>
           )}
 
           <div style={{ marginBottom:32 }}>
-            <div style={{ fontSize:26, fontWeight:800, color:"#0f1a2b", marginBottom:6 }}>
+            <div style={{ fontSize:26, fontWeight:800, color:"#1c1c1e", marginBottom:6 }}>
               {mode==="login" ? "Bon retour 👋" : "Créer un compte"}
             </div>
-            <div style={{ fontSize:14, color:"#8898b0", lineHeight:1.5 }}>
+            <div style={{ fontSize:14, color:"rgba(60,60,67,0.55)", lineHeight:1.5 }}>
               {mode==="login"
                 ? "Connecte-toi pour accéder à tes révisions."
                 : "Rejoins StudySpace gratuitement."}
@@ -1641,26 +1728,30 @@ const LoginScreen = () => {
           <div style={{ display:"flex", flexDirection:"column", gap:16 }}>
             {/* Email */}
             <div>
-              <label style={{ fontSize:12, fontWeight:600, color:"#4a5568", display:"block", marginBottom:7, letterSpacing:".04em" }}>ADRESSE EMAIL</label>
+              <label style={{ fontSize:12, fontWeight:600, color:"rgba(60,60,67,0.55)", display:"block", marginBottom:7, letterSpacing:".04em" }}>ADRESSE EMAIL</label>
               <input type="email" value={email} onChange={e=>setEmail(e.target.value)}
                 onKeyDown={e=>e.key==="Enter"&&submit()} placeholder="nom@exemple.com"
-                style={{ width:"100%", padding:"13px 14px", border:`2px solid ${email?"#2454A0":"#e8ecf5"}`,
-                  borderRadius:10, fontSize:14, outline:"none", fontFamily:"inherit", boxSizing:"border-box",
-                  transition:"border-color .2s", color:"#1a2332" }} />
+                style={{ width:"100%", padding:"13px 14px",
+                  border:`2px solid ${email?"#007AFF":"rgba(120,120,128,0.2)"}`,
+                  background:"rgba(255,255,255,0.6)",
+                  borderRadius:14, fontSize:14, outline:"none", fontFamily:"inherit", boxSizing:"border-box",
+                  transition:"border-color .2s", color:"#1c1c1e" }} />
             </div>
 
             {/* Mot de passe */}
             <div>
-              <label style={{ fontSize:12, fontWeight:600, color:"#4a5568", display:"block", marginBottom:7, letterSpacing:".04em" }}>MOT DE PASSE</label>
+              <label style={{ fontSize:12, fontWeight:600, color:"rgba(60,60,67,0.55)", display:"block", marginBottom:7, letterSpacing:".04em" }}>MOT DE PASSE</label>
               <div style={{ position:"relative" }}>
                 <input type={showPwd?"text":"password"} value={pwd} onChange={e=>setPwd(e.target.value)}
                   onKeyDown={e=>e.key==="Enter"&&submit()} placeholder="Min. 6 caractères"
-                  style={{ width:"100%", padding:"13px 44px 13px 14px", border:`2px solid ${pwd?"#2454A0":"#e8ecf5"}`,
-                    borderRadius:10, fontSize:14, outline:"none", fontFamily:"inherit", boxSizing:"border-box",
-                    transition:"border-color .2s", color:"#1a2332" }} />
+                  style={{ width:"100%", padding:"13px 44px 13px 14px",
+                    border:`2px solid ${pwd?"#007AFF":"rgba(120,120,128,0.2)"}`,
+                    background:"rgba(255,255,255,0.6)",
+                    borderRadius:14, fontSize:14, outline:"none", fontFamily:"inherit", boxSizing:"border-box",
+                    transition:"border-color .2s", color:"#1c1c1e" }} />
                 <button type="button" onClick={() => setShowPwd(s=>!s)}
                   style={{ position:"absolute", right:13, top:"50%", transform:"translateY(-50%)",
-                    background:"none", border:"none", cursor:"pointer", color:"#9aa3b0", fontSize:15, padding:2,
+                    background:"none", border:"none", cursor:"pointer", color:"rgba(60,60,67,0.4)", fontSize:15, padding:2,
                     display:"flex", alignItems:"center" }}>
                   {showPwd
                     ? <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
@@ -1671,24 +1762,25 @@ const LoginScreen = () => {
             </div>
           </div>
 
-          {err && <div style={{ marginTop:14, fontSize:13, color:"#dc2626", padding:"10px 14px",
-            background:"#fef2f2", borderRadius:8, border:"1px solid #fecaca" }}>{err}</div>}
-          {msg && <div style={{ marginTop:14, fontSize:13, color:"#16a34a", padding:"10px 14px",
-            background:"#f0fdf4", borderRadius:8, border:"1px solid #bbf7d0" }}>{msg}</div>}
+          {err && <div style={{ marginTop:14, fontSize:13, color:"#FF3B30", padding:"10px 14px",
+            background:"rgba(255,59,48,0.08)", borderRadius:12, border:"1px solid rgba(255,59,48,0.2)" }}>{err}</div>}
+          {msg && <div style={{ marginTop:14, fontSize:13, color:"#34C759", padding:"10px 14px",
+            background:"rgba(52,199,89,0.08)", borderRadius:12, border:"1px solid rgba(52,199,89,0.2)" }}>{msg}</div>}
 
           <button onClick={submit} disabled={loading||!email||!pwd}
-            style={{ marginTop:24, width:"100%", padding:"14px",
-              background:(!email||!pwd||loading)?"#cbd5e1":"linear-gradient(135deg, #2454A0 0%, #1d3a7a 100%)",
-              color:"#fff", border:"none", borderRadius:10, fontSize:15, fontWeight:700,
+            style={{ marginTop:24, width:"100%", padding:"15px",
+              background:(!email||!pwd||loading)?"rgba(120,120,128,0.16)":"#007AFF",
+              color:(!email||!pwd||loading)?"rgba(60,60,67,0.4)":"#fff",
+              border:"none", borderRadius:16, fontSize:15, fontWeight:700,
               cursor:(!email||!pwd||loading)?"default":"pointer", fontFamily:"inherit",
-              boxShadow:(!email||!pwd||loading)?"none":"0 4px 18px rgba(36,84,160,.38)",
+              boxShadow:(!email||!pwd||loading)?"none":"0 4px 18px rgba(0,122,255,0.40)",
               transition:"all .2s", letterSpacing:".01em" }}>
             {loading ? "Chargement..." : mode==="login" ? "Se connecter  →" : "Créer mon compte  →"}
           </button>
 
           <div style={{ textAlign:"center", marginTop:22 }}>
             <button onClick={() => { setMode(m=>m==="login"?"signup":"login"); setErr(""); setMsg(""); }}
-              style={{ background:"none", border:"none", color:"#2454A0", fontSize:13.5, cursor:"pointer",
+              style={{ background:"none", border:"none", color:"#007AFF", fontSize:13.5, cursor:"pointer",
                 fontFamily:"inherit", fontWeight:500 }}>
               {mode==="login" ? "Pas encore de compte ? S'inscrire" : "Déjà un compte ? Se connecter"}
             </button>
@@ -1708,26 +1800,29 @@ const SubjectCard = ({ subject, themes, onOpen, onDelete }) => {
   const totalST = (themes||[]).reduce((a,t) => a+t.sousThemes.length, 0);
   return (
     <div onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)}
-      onClick={onOpen} style={{ position:"relative", borderRadius:14, overflow:"hidden",
-        background:"#fff", border:`1px solid ${hovered?"#d0d5de":"#e8ecf2"}`,
-        boxShadow:hovered?"0 10px 36px rgba(0,0,0,.13)":"0 2px 8px rgba(0,0,0,.05)",
-        cursor:"pointer", transition:"all .22s ease", transform:hovered?"translateY(-3px)":"translateY(0)",
+      onClick={onOpen} style={{ position:"relative", borderRadius:20, overflow:"hidden",
+        background:hovered?`${subject.couleur}22`:"rgba(255,255,255,0.65)",
+        backdropFilter:"blur(22px) saturate(180%)", WebkitBackdropFilter:"blur(22px) saturate(180%)",
+        border:`1px solid ${hovered?subject.couleur+"55":"rgba(255,255,255,0.58)"}`,
+        boxShadow:hovered?`0 16px 48px rgba(0,0,0,0.15),0 4px 16px ${subject.couleur}28`:"0 4px 24px rgba(0,0,0,0.08),inset 0 1px 0 rgba(255,255,255,0.72)",
+        cursor:"pointer", transition:"all .3s cubic-bezier(0.34,1.2,0.64,1)",
+        transform:hovered?"translateY(-5px) scale(1.01)":"translateY(0) scale(1)",
         minHeight:170 }}>
 
       {/* Accent coloré */}
-      <div style={{ height:4, background:subject.couleur, borderRadius:"14px 14px 0 0", marginTop:0 }} />
+      <div style={{ height:4, background:subject.couleur, borderRadius:"20px 20px 0 0" }} />
 
       <div style={{ padding:"18px 20px 20px" }}>
         <div style={{ fontSize:34, marginBottom:12, userSelect:"none" }}>{subject.emoji}</div>
-        <div style={{ fontSize:16, fontWeight:700, color:"#1a2332", marginBottom:4, lineHeight:1.3 }}>{subject.nom}</div>
-        {subject.soustitre && <div style={{ fontSize:12, color:"#8898b0", marginBottom:16 }}>{subject.soustitre}</div>}
+        <div style={{ fontSize:16, fontWeight:700, color:"#1c1c1e", marginBottom:4, lineHeight:1.3 }}>{subject.nom}</div>
+        {subject.soustitre && <div style={{ fontSize:12, color:"rgba(60,60,67,0.55)", marginBottom:16 }}>{subject.soustitre}</div>}
         <div style={{ display:"flex", gap:7, flexWrap:"wrap" }}>
-          <span style={{ fontSize:11, background:"#eef2fc", color:"#2454A0", borderRadius:6,
-            padding:"3px 9px", fontWeight:600 }}>
+          <span style={{ fontSize:11, background:"rgba(0,122,255,0.12)", color:"#007AFF", borderRadius:8,
+            padding:"3px 10px", fontWeight:600 }}>
             {(themes||[]).length} thème{(themes||[]).length!==1?"s":""}
           </span>
-          <span style={{ fontSize:11, background:"#fdf0e6", color:"#B85820", borderRadius:6,
-            padding:"3px 9px", fontWeight:600 }}>
+          <span style={{ fontSize:11, background:"rgba(255,159,10,0.14)", color:"#C47B00", borderRadius:8,
+            padding:"3px 10px", fontWeight:600 }}>
             {totalST} sous-thème{totalST!==1?"s":""}
           </span>
         </div>
@@ -1735,24 +1830,25 @@ const SubjectCard = ({ subject, themes, onOpen, onDelete }) => {
 
       {/* Overlay au survol */}
       <div style={{ position:"absolute", inset:0,
-        background:hovered?`${subject.couleur}e8`:"transparent",
-        transition:"background .22s ease",
+        background:hovered?`${subject.couleur}cc`:"transparent",
+        backdropFilter:hovered?"blur(6px)":"none", WebkitBackdropFilter:hovered?"blur(6px)":"none",
+        transition:"all .25s ease",
         display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", gap:10,
         pointerEvents:hovered?"all":"none", opacity:hovered?1:0 }}>
-        <div style={{ background:"rgba(255,255,255,.2)", backdropFilter:"blur(4px)", borderRadius:10,
-          padding:"10px 22px", border:"1px solid rgba(255,255,255,.3)" }}>
+        <div style={{ background:"rgba(255,255,255,0.25)", backdropFilter:"blur(8px)", WebkitBackdropFilter:"blur(8px)", borderRadius:16,
+          padding:"10px 26px", border:"1px solid rgba(255,255,255,0.4)" }}>
           <div style={{ color:"#fff", fontWeight:700, fontSize:15, textAlign:"center" }}>Ouvrir</div>
         </div>
-        <div style={{ color:"rgba(255,255,255,.85)", fontSize:12, textAlign:"center" }}>
+        <div style={{ color:"rgba(255,255,255,0.88)", fontSize:12, textAlign:"center" }}>
           {(themes||[]).length} thème{(themes||[]).length!==1?"s":""} · {totalST} sous-thème{totalST!==1?"s":""}
         </div>
         {onDelete && (
           <button onClick={e => { e.stopPropagation(); onDelete(); }}
-            style={{ marginTop:4, padding:"5px 14px", background:"rgba(255,255,255,.15)", color:"rgba(255,255,255,.8)",
-              border:"1px solid rgba(255,255,255,.3)", borderRadius:6, cursor:"pointer", fontSize:11,
+            style={{ marginTop:4, padding:"5px 14px", background:"rgba(255,255,255,0.18)", color:"rgba(255,255,255,0.85)",
+              border:"1px solid rgba(255,255,255,0.35)", borderRadius:10, cursor:"pointer", fontSize:11,
               fontFamily:"inherit", transition:"all .15s" }}
-            onMouseEnter={e => { e.currentTarget.style.background="rgba(220,38,38,.5)"; e.currentTarget.style.color="#fff"; }}
-            onMouseLeave={e => { e.currentTarget.style.background="rgba(255,255,255,.15)"; e.currentTarget.style.color="rgba(255,255,255,.8)"; }}>
+            onMouseEnter={e => { e.currentTarget.style.background="rgba(255,59,48,0.55)"; e.currentTarget.style.color="#fff"; }}
+            onMouseLeave={e => { e.currentTarget.style.background="rgba(255,255,255,0.18)"; e.currentTarget.style.color="rgba(255,255,255,0.85)"; }}>
             Supprimer
           </button>
         )}
@@ -1770,25 +1866,28 @@ const SubjectLobby = ({ user, subjects, subjectThemes, onOpenSubject, onAddSubje
   const initial = (user?.email?.[0] || "?").toUpperCase();
 
   return (
-    <div style={{ height:"100vh", display:"flex", flexDirection:"column", background:"#f0f2f5", fontFamily:"'Plus Jakarta Sans',sans-serif" }}>
+    <div style={{ height:"100vh", display:"flex", flexDirection:"column", background:"transparent" }}>
 
       {/* Barre du haut */}
-      <header style={{ background:"#1d2b42", padding:"0 28px", height:62, display:"flex",
-        alignItems:"center", gap:14, flexShrink:0, boxShadow:"0 2px 12px rgba(0,0,0,.2)" }}>
+      <header style={{ padding:"0 28px", height:64,
+        background:"rgba(18,18,22,0.80)", backdropFilter:"blur(28px) saturate(180%)", WebkitBackdropFilter:"blur(28px) saturate(180%)",
+        borderBottom:"1px solid rgba(255,255,255,0.08)",
+        display:"flex", alignItems:"center", gap:14, flexShrink:0 }}>
         <div style={{ display:"flex", alignItems:"center", gap:10 }}>
-          <div style={{ width:34, height:34, borderRadius:9, background:"linear-gradient(135deg,#2454A0,#1d3a7a)",
-            display:"flex", alignItems:"center", justifyContent:"center", fontSize:16, flexShrink:0 }}>📚</div>
+          <div style={{ width:34, height:34, borderRadius:10, background:"linear-gradient(135deg,#007AFF,#0055CC)",
+            display:"flex", alignItems:"center", justifyContent:"center", fontSize:16, flexShrink:0,
+            boxShadow:"0 2px 10px rgba(0,122,255,0.4)" }}>📚</div>
           <div style={{ fontSize:17, fontWeight:800, color:"#fff", letterSpacing:"-.01em" }}>StudySpace</div>
         </div>
         <div style={{ flex:1 }} />
         <button onClick={onOpenAccount}
-          style={{ display:"flex", alignItems:"center", gap:9, background:"rgba(255,255,255,.09)",
-            border:"1px solid rgba(255,255,255,.12)", borderRadius:10, padding:"6px 14px 6px 8px",
+          style={{ display:"flex", alignItems:"center", gap:9, background:"rgba(255,255,255,0.10)",
+            border:"1px solid rgba(255,255,255,0.14)", borderRadius:20, padding:"6px 14px 6px 8px",
             cursor:"pointer", color:"#fff", transition:"all .2s", fontFamily:"inherit" }}
-          onMouseEnter={e => e.currentTarget.style.background="rgba(255,255,255,.15)"}
-          onMouseLeave={e => e.currentTarget.style.background="rgba(255,255,255,.09)"}>
+          onMouseEnter={e => e.currentTarget.style.background="rgba(255,255,255,0.18)"}
+          onMouseLeave={e => e.currentTarget.style.background="rgba(255,255,255,0.10)"}>
           <div style={{ width:30, height:30, borderRadius:"50%",
-            background:"linear-gradient(135deg,#2454A0,#1d3a7a)",
+            background:"linear-gradient(135deg,#007AFF,#0055CC)",
             display:"flex", alignItems:"center", justifyContent:"center", fontSize:13, fontWeight:700, flexShrink:0 }}>
             {initial}
           </div>
@@ -1801,8 +1900,8 @@ const SubjectLobby = ({ user, subjects, subjectThemes, onOpenSubject, onAddSubje
       {/* Contenu */}
       <div style={{ flex:1, padding:"36px 28px", overflowY:"auto" }}>
         <div style={{ marginBottom:30 }}>
-          <div style={{ fontSize:22, fontWeight:800, color:"#1a2332", marginBottom:4 }}>Mes matières</div>
-          <div style={{ fontSize:14, color:"#8898b0" }}>Sélectionne une matière pour commencer à réviser.</div>
+          <div style={{ fontSize:22, fontWeight:800, color:"#1c1c1e", marginBottom:4 }}>Mes matières</div>
+          <div style={{ fontSize:14, color:"rgba(60,60,67,0.55)" }}>Sélectionne une matière pour commencer à réviser.</div>
         </div>
 
         <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill, minmax(210px, 1fr))", gap:16 }}>
@@ -1815,14 +1914,16 @@ const SubjectLobby = ({ user, subjects, subjectThemes, onOpenSubject, onAddSubje
           {/* Carte "Ajouter" */}
           <div onClick={onAddSubject}
             onMouseEnter={() => setAddHover(true)} onMouseLeave={() => setAddHover(false)}
-            style={{ borderRadius:14, border:`2px dashed ${addHover?"#2454A0":"#d0d8e4"}`,
-              background:addHover?"#f0f4ff":"#fafbfc", cursor:"pointer", minHeight:170,
+            style={{ borderRadius:20, border:`2px dashed ${addHover?"#007AFF":"rgba(255,255,255,0.45)"}`,
+              background:addHover?"rgba(0,122,255,0.08)":"rgba(255,255,255,0.28)",
+              backdropFilter:"blur(16px)", WebkitBackdropFilter:"blur(16px)",
+              cursor:"pointer", minHeight:170,
               display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", gap:10,
-              color:addHover?"#2454A0":"#9aa3b0", transition:"all .2s",
-              transform:addHover?"translateY(-2px)":"translateY(0)" }}>
-            <div style={{ width:40, height:40, borderRadius:"50%", background:addHover?"#2454A0":"#e8ecf2",
-              display:"flex", alignItems:"center", justifyContent:"center", color:addHover?"#fff":"#9aa3b0",
-              fontSize:22, transition:"all .2s", fontWeight:300 }}>+</div>
+              color:addHover?"#007AFF":"rgba(60,60,67,0.4)", transition:"all .25s",
+              transform:addHover?"translateY(-3px)":"translateY(0)" }}>
+            <div style={{ width:44, height:44, borderRadius:"50%", background:addHover?"#007AFF":"rgba(120,120,128,0.16)",
+              display:"flex", alignItems:"center", justifyContent:"center", color:addHover?"#fff":"rgba(60,60,67,0.4)",
+              fontSize:24, transition:"all .2s", fontWeight:300 }}>+</div>
             <div style={{ fontSize:13.5, fontWeight:600 }}>Ajouter une matière</div>
           </div>
         </div>
@@ -1865,33 +1966,36 @@ const AccountModal = ({ user, onClose }) => {
   const initial = (user?.email?.[0]||"?").toUpperCase();
 
   return ReactDOM.createPortal(
-    <div onClick={onClose} style={{ position:"fixed", inset:0, background:"rgba(10,18,30,.55)",
-      backdropFilter:"blur(3px)", zIndex:2000, display:"flex", alignItems:"center", justifyContent:"center",
-      fontFamily:"'Plus Jakarta Sans',sans-serif", padding:"20px" }}>
-      <div onClick={e=>e.stopPropagation()} className="anim-fadein" style={{ background:"#fff", borderRadius:18,
-        width:"100%", maxWidth:460, padding:"32px", boxShadow:"0 24px 64px rgba(0,0,0,.22)",
+    <div onClick={onClose} style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.35)",
+      backdropFilter:"blur(16px)", WebkitBackdropFilter:"blur(16px)", zIndex:2000, display:"flex", alignItems:"center", justifyContent:"center",
+      padding:"20px" }}>
+      <div onClick={e=>e.stopPropagation()} className="anim-fadein" style={{
+        background:"rgba(255,255,255,0.78)", backdropFilter:"blur(40px) saturate(200%)", WebkitBackdropFilter:"blur(40px) saturate(200%)",
+        border:"1px solid rgba(255,255,255,0.65)",
+        borderRadius:28, width:"100%", maxWidth:460, padding:"32px",
+        boxShadow:"0 24px 64px rgba(0,0,0,0.18),inset 0 1px 0 rgba(255,255,255,0.8)",
         maxHeight:"90vh", overflowY:"auto" }}>
 
         {/* En-tête */}
         <div style={{ display:"flex", alignItems:"center", gap:16, marginBottom:28 }}>
           <div style={{ width:58, height:58, borderRadius:"50%",
-            background:"linear-gradient(135deg,#2454A0,#1d3a7a)",
+            background:"linear-gradient(135deg,#007AFF,#0055CC)",
             display:"flex", alignItems:"center", justifyContent:"center",
             fontSize:22, fontWeight:800, color:"#fff", flexShrink:0,
-            boxShadow:"0 4px 14px rgba(36,84,160,.3)" }}>
+            boxShadow:"0 4px 14px rgba(0,122,255,0.35)" }}>
             {initial}
           </div>
           <div>
-            <div style={{ fontWeight:800, fontSize:18, color:"#1a2332" }}>Mon compte</div>
-            <div style={{ fontSize:12.5, color:"#8898b0", marginTop:2 }}>Gérer mes informations</div>
+            <div style={{ fontWeight:800, fontSize:18, color:"#1c1c1e" }}>Mon compte</div>
+            <div style={{ fontSize:12.5, color:"rgba(60,60,67,0.55)", marginTop:2 }}>Gérer mes informations</div>
           </div>
           <div style={{ flex:1 }} />
-          <button onClick={onClose} style={{ width:34, height:34, borderRadius:"50%", background:"#f0f2f5",
-            border:"none", cursor:"pointer", fontSize:18, color:"#5a6880", lineHeight:1,
+          <button onClick={onClose} style={{ width:34, height:34, borderRadius:"50%", background:"rgba(120,120,128,0.16)",
+            border:"none", cursor:"pointer", fontSize:18, color:"rgba(60,60,67,0.6)", lineHeight:1,
             display:"flex", alignItems:"center", justifyContent:"center",
             transition:"background .15s" }}
-            onMouseEnter={e => e.currentTarget.style.background="#e2e6ed"}
-            onMouseLeave={e => e.currentTarget.style.background="#f0f2f5"}>×</button>
+            onMouseEnter={e => e.currentTarget.style.background="rgba(120,120,128,0.28)"}
+            onMouseLeave={e => e.currentTarget.style.background="rgba(120,120,128,0.16)"}>×</button>
         </div>
 
         {/* Infos */}
@@ -1900,37 +2004,40 @@ const AccountModal = ({ user, onClose }) => {
             { label:"Adresse email", value:user?.email },
             { label:"Membre depuis", value:joinedDate },
           ].map(({ label, value }) => (
-            <div key={label} style={{ background:"#f7f9fc", borderRadius:10, padding:"14px 16px",
-              border:"1px solid #edf0f6" }}>
-              <div style={{ fontSize:10.5, fontWeight:700, color:"#9aa3b0", textTransform:"uppercase",
+            <div key={label} style={{ background:"rgba(120,120,128,0.10)", borderRadius:14, padding:"14px 16px",
+              border:"1px solid rgba(255,255,255,0.5)" }}>
+              <div style={{ fontSize:10.5, fontWeight:700, color:"rgba(60,60,67,0.45)", textTransform:"uppercase",
                 letterSpacing:".08em", marginBottom:5 }}>{label}</div>
-              <div style={{ fontSize:14, color:"#1a2332", fontWeight:500 }}>{value}</div>
+              <div style={{ fontSize:14, color:"#1c1c1e", fontWeight:500 }}>{value}</div>
             </div>
           ))}
         </div>
 
         {/* Changer de mot de passe */}
-        <div style={{ borderTop:"1px solid #edf0f6", paddingTop:22, marginBottom:22 }}>
-          <div style={{ fontSize:14, fontWeight:700, color:"#1a2332", marginBottom:14 }}>Changer de mot de passe</div>
+        <div style={{ borderTop:"1px solid rgba(60,60,67,0.10)", paddingTop:22, marginBottom:22 }}>
+          <div style={{ fontSize:14, fontWeight:700, color:"#1c1c1e", marginBottom:14 }}>Changer de mot de passe</div>
           <div style={{ position:"relative" }}>
             <input type={showNew?"text":"password"} value={newPwd} onChange={e=>setNewPwd(e.target.value)}
               placeholder="Nouveau mot de passe (min. 6 car.)"
-              style={{ width:"100%", padding:"12px 42px 12px 14px", border:`2px solid ${newPwd?"#2454A0":"#e8ecf5"}`,
-                borderRadius:9, fontSize:13, outline:"none", fontFamily:"inherit", boxSizing:"border-box",
+              style={{ width:"100%", padding:"12px 42px 12px 14px",
+                border:`2px solid ${newPwd?"#007AFF":"rgba(120,120,128,0.2)"}`,
+                background:"rgba(255,255,255,0.55)", borderRadius:14,
+                fontSize:13, outline:"none", fontFamily:"inherit", boxSizing:"border-box",
                 transition:"border-color .2s" }} />
             <button type="button" onClick={() => setShowNew(s=>!s)}
               style={{ position:"absolute", right:12, top:"50%", transform:"translateY(-50%)",
-                background:"none", border:"none", cursor:"pointer", color:"#9aa3b0", fontSize:14,
+                background:"none", border:"none", cursor:"pointer", color:"rgba(60,60,67,0.4)", fontSize:14,
                 display:"flex", alignItems:"center" }}>
               {showNew?"🙈":"👁"}
             </button>
           </div>
-          {pwdErr && <div style={{ marginTop:8, fontSize:12, color:"#dc2626" }}>{pwdErr}</div>}
-          {pwdMsg && <div style={{ marginTop:8, fontSize:12, color:"#16a34a" }}>{pwdMsg}</div>}
+          {pwdErr && <div style={{ marginTop:8, fontSize:12, color:"#FF3B30" }}>{pwdErr}</div>}
+          {pwdMsg && <div style={{ marginTop:8, fontSize:12, color:"#34C759" }}>{pwdMsg}</div>}
           <button onClick={changePwd} disabled={!newPwd||pwdLoading}
             style={{ marginTop:12, padding:"10px 22px",
-              background:!newPwd||pwdLoading?"#e2e6ed":"#2454A0", color:!newPwd||pwdLoading?"#9aa3b0":"#fff",
-              border:"none", borderRadius:8, cursor:!newPwd||pwdLoading?"default":"pointer",
+              background:!newPwd||pwdLoading?"rgba(120,120,128,0.16)":"#007AFF",
+              color:!newPwd||pwdLoading?"rgba(60,60,67,0.4)":"#fff",
+              border:"none", borderRadius:12, cursor:!newPwd||pwdLoading?"default":"pointer",
               fontSize:13, fontWeight:600, fontFamily:"inherit", transition:"all .2s" }}>
             {pwdLoading ? "..." : "Mettre à jour"}
           </button>
@@ -1938,11 +2045,11 @@ const AccountModal = ({ user, onClose }) => {
 
         {/* Se déconnecter */}
         <button onClick={() => _sb.auth.signOut()}
-          style={{ width:"100%", padding:"12px", background:"#fff5f5", color:"#dc2626",
-            border:"1px solid #fecaca", borderRadius:10, cursor:"pointer", fontSize:14, fontWeight:600,
+          style={{ width:"100%", padding:"12px", background:"rgba(255,59,48,0.10)", color:"#FF3B30",
+            border:"1px solid rgba(255,59,48,0.25)", borderRadius:14, cursor:"pointer", fontSize:14, fontWeight:600,
             fontFamily:"inherit", transition:"all .2s" }}
-          onMouseEnter={e => { e.currentTarget.style.background="#fef2f2"; e.currentTarget.style.borderColor="#f87171"; }}
-          onMouseLeave={e => { e.currentTarget.style.background="#fff5f5"; e.currentTarget.style.borderColor="#fecaca"; }}>
+          onMouseEnter={e => { e.currentTarget.style.background="rgba(255,59,48,0.18)"; }}
+          onMouseLeave={e => { e.currentTarget.style.background="rgba(255,59,48,0.10)"; }}>
           Se déconnecter
         </button>
       </div>
@@ -1975,39 +2082,44 @@ const AddSubjectModal = ({ onClose, onAdd }) => {
   };
 
   return ReactDOM.createPortal(
-    <div onClick={onClose} style={{ position:"fixed", inset:0, background:"rgba(10,18,30,.55)",
-      backdropFilter:"blur(3px)", zIndex:2000, display:"flex", alignItems:"center", justifyContent:"center",
-      fontFamily:"'Plus Jakarta Sans',sans-serif", padding:"20px" }}>
-      <div onClick={e=>e.stopPropagation()} className="anim-fadein" style={{ background:"#fff", borderRadius:18,
-        width:"100%", maxWidth:430, padding:"30px", boxShadow:"0 24px 64px rgba(0,0,0,.22)" }}>
+    <div onClick={onClose} style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.35)",
+      backdropFilter:"blur(16px)", WebkitBackdropFilter:"blur(16px)", zIndex:2000, display:"flex", alignItems:"center", justifyContent:"center",
+      padding:"20px" }}>
+      <div onClick={e=>e.stopPropagation()} className="anim-fadein" style={{
+        background:"rgba(255,255,255,0.78)", backdropFilter:"blur(40px) saturate(200%)", WebkitBackdropFilter:"blur(40px) saturate(200%)",
+        border:"1px solid rgba(255,255,255,0.65)",
+        borderRadius:28, width:"100%", maxWidth:430, padding:"30px",
+        boxShadow:"0 24px 64px rgba(0,0,0,0.18),inset 0 1px 0 rgba(255,255,255,0.8)" }}>
 
         <div style={{ display:"flex", alignItems:"center", marginBottom:24 }}>
-          <div style={{ fontSize:17, fontWeight:800, color:"#1a2332" }}>Nouvelle matière</div>
+          <div style={{ fontSize:17, fontWeight:800, color:"#1c1c1e" }}>Nouvelle matière</div>
           <div style={{ flex:1 }} />
-          <button onClick={onClose} style={{ width:32, height:32, borderRadius:"50%", background:"#f0f2f5",
-            border:"none", cursor:"pointer", fontSize:18, color:"#5a6880", lineHeight:1,
+          <button onClick={onClose} style={{ width:32, height:32, borderRadius:"50%", background:"rgba(120,120,128,0.16)",
+            border:"none", cursor:"pointer", fontSize:18, color:"rgba(60,60,67,0.6)", lineHeight:1,
             display:"flex", alignItems:"center", justifyContent:"center" }}>×</button>
         </div>
 
         <div style={{ display:"flex", flexDirection:"column", gap:16 }}>
           <div>
-            <label style={{ fontSize:11.5, fontWeight:700, color:"#4a5568", display:"block", marginBottom:6, letterSpacing:".06em", textTransform:"uppercase" }}>Nom *</label>
+            <label style={{ fontSize:11.5, fontWeight:700, color:"rgba(60,60,67,0.55)", display:"block", marginBottom:6, letterSpacing:".06em", textTransform:"uppercase" }}>Nom *</label>
             <input value={nom} onChange={e=>setNom(e.target.value)}
               onKeyDown={e=>e.key==="Enter"&&submit()}
               placeholder="ex : Mathématiques"
-              style={{ width:"100%", padding:"11px 13px", border:`2px solid ${nom?"#2454A0":"#e8ecf5"}`,
-                borderRadius:9, fontSize:14, outline:"none", fontFamily:"inherit", boxSizing:"border-box", transition:"border-color .2s" }} />
+              style={{ width:"100%", padding:"11px 13px", border:`2px solid ${nom?"#007AFF":"rgba(120,120,128,0.2)"}`,
+                background:"rgba(255,255,255,0.55)",
+                borderRadius:14, fontSize:14, outline:"none", fontFamily:"inherit", boxSizing:"border-box", transition:"border-color .2s" }} />
           </div>
           <div>
-            <label style={{ fontSize:11.5, fontWeight:700, color:"#4a5568", display:"block", marginBottom:6, letterSpacing:".06em", textTransform:"uppercase" }}>Sous-titre <span style={{ opacity:.5, fontWeight:400 }}>(optionnel)</span></label>
+            <label style={{ fontSize:11.5, fontWeight:700, color:"rgba(60,60,67,0.55)", display:"block", marginBottom:6, letterSpacing:".06em", textTransform:"uppercase" }}>Sous-titre <span style={{ opacity:.5, fontWeight:400 }}>(optionnel)</span></label>
             <input value={soustitre} onChange={e=>setSoustitre(e.target.value)}
               placeholder="ex : Lycée · Terminale"
-              style={{ width:"100%", padding:"11px 13px", border:"2px solid #e8ecf5",
-                borderRadius:9, fontSize:14, outline:"none", fontFamily:"inherit", boxSizing:"border-box" }} />
+              style={{ width:"100%", padding:"11px 13px", border:"2px solid rgba(120,120,128,0.2)",
+                background:"rgba(255,255,255,0.55)",
+                borderRadius:14, fontSize:14, outline:"none", fontFamily:"inherit", boxSizing:"border-box" }} />
           </div>
 
           <div>
-            <label style={{ fontSize:11.5, fontWeight:700, color:"#4a5568", display:"block", marginBottom:10, letterSpacing:".06em", textTransform:"uppercase" }}>Couleur</label>
+            <label style={{ fontSize:11.5, fontWeight:700, color:"rgba(60,60,67,0.55)", display:"block", marginBottom:10, letterSpacing:".06em", textTransform:"uppercase" }}>Couleur</label>
             <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
               {SUBJECT_COLORS.map(c => (
                 <div key={c} onClick={() => setCouleur(c)} style={{ width:30, height:30, borderRadius:"50%",
@@ -2019,12 +2131,12 @@ const AddSubjectModal = ({ onClose, onAdd }) => {
           </div>
 
           <div>
-            <label style={{ fontSize:11.5, fontWeight:700, color:"#4a5568", display:"block", marginBottom:10, letterSpacing:".06em", textTransform:"uppercase" }}>Icône</label>
+            <label style={{ fontSize:11.5, fontWeight:700, color:"rgba(60,60,67,0.55)", display:"block", marginBottom:10, letterSpacing:".06em", textTransform:"uppercase" }}>Icône</label>
             <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
               {SUBJECT_EMOJIS.map(e => (
                 <div key={e} onClick={() => setEmoji(e)}
-                  style={{ width:40, height:40, borderRadius:10, border:`2px solid ${emoji===e?"#2454A0":"#e8ecf5"}`,
-                    background:emoji===e?"#eef2fc":"transparent",
+                  style={{ width:40, height:40, borderRadius:12, border:`2px solid ${emoji===e?"#007AFF":"rgba(120,120,128,0.2)"}`,
+                    background:emoji===e?"rgba(0,122,255,0.10)":"transparent",
                     display:"flex", alignItems:"center", justifyContent:"center",
                     fontSize:20, cursor:"pointer", transition:"all .15s",
                     transform:emoji===e?"scale(1.08)":"scale(1)" }}>{e}</div>
@@ -2034,16 +2146,16 @@ const AddSubjectModal = ({ onClose, onAdd }) => {
         </div>
 
         <div style={{ display:"flex", gap:10, marginTop:26 }}>
-          <button onClick={onClose} style={{ flex:1, padding:"11px", background:"#f5f6f9", color:"#5a6880",
-            border:"1px solid #d8dde8", borderRadius:9, cursor:"pointer", fontSize:14, fontFamily:"inherit",
+          <button onClick={onClose} style={{ flex:1, padding:"12px", background:"rgba(120,120,128,0.14)", color:"rgba(60,60,67,0.7)",
+            border:"none", borderRadius:14, cursor:"pointer", fontSize:14, fontFamily:"inherit",
             transition:"background .15s" }}
-            onMouseEnter={e => e.currentTarget.style.background="#e8ecf2"}
-            onMouseLeave={e => e.currentTarget.style.background="#f5f6f9"}>Annuler</button>
+            onMouseEnter={e => e.currentTarget.style.background="rgba(120,120,128,0.22)"}
+            onMouseLeave={e => e.currentTarget.style.background="rgba(120,120,128,0.14)"}>Annuler</button>
           <button onClick={submit} disabled={!nom.trim()}
-            style={{ flex:1, padding:"11px", background:nom.trim()?"#2454A0":"#94a3b8",
-              color:"#fff", border:"none", borderRadius:9,
+            style={{ flex:1, padding:"12px", background:nom.trim()?"#007AFF":"rgba(120,120,128,0.16)",
+              color:nom.trim()?"#fff":"rgba(60,60,67,0.35)", border:"none", borderRadius:14,
               cursor:nom.trim()?"pointer":"default", fontSize:14, fontWeight:700, fontFamily:"inherit",
-              boxShadow:nom.trim()?"0 4px 14px rgba(36,84,160,.3)":"none", transition:"all .2s" }}>
+              boxShadow:nom.trim()?"0 4px 14px rgba(0,122,255,0.35)":"none", transition:"all .2s" }}>
             Créer
           </button>
         </div>
@@ -2152,7 +2264,7 @@ const SubjectApp = ({ subject, user, onBack, onOpenAccount }) => {
   const TABS = ["dossier","mindmap","quiz"];
 
   return (
-    <div style={{ height:"100vh", display:"flex", fontFamily:"'Plus Jakarta Sans',sans-serif", color:"#1a2332" }}>
+    <div style={{ height:"100vh", display:"flex", fontFamily:"-apple-system,'SF Pro Display','SF Pro Text','Helvetica Neue',Inter,sans-serif", color:"#1c1c1e" }}>
 
       {isMobile && sidebarOpen && (
         <div onClick={() => setSidebarOpen(false)}
@@ -2184,39 +2296,42 @@ const SubjectApp = ({ subject, user, onBack, onOpenAccount }) => {
       <div style={{ flex:1, display:"flex", flexDirection:"column", overflow:"hidden", minWidth:0 }}>
 
         {/* Barre du haut */}
-        <header data-np style={{ height:52, flexShrink:0, background:"#fff", borderBottom:"1px solid #e2e6ed",
+        <header data-np style={{ height:52, flexShrink:0,
+          background:"rgba(255,255,255,0.62)", backdropFilter:"blur(22px) saturate(180%)", WebkitBackdropFilter:"blur(22px) saturate(180%)",
+          borderBottom:"1px solid rgba(255,255,255,0.48)",
           display:"flex", alignItems:"center", padding:"0 16px", gap:10 }}>
           <button onClick={() => setSidebarOpen(o=>!o)}
-            style={{ background:"none", border:"none", fontSize:20, cursor:"pointer", color:"#5a6880", padding:"0 4px", flexShrink:0 }}>☰</button>
+            style={{ background:"none", border:"none", fontSize:20, cursor:"pointer", color:"rgba(60,60,67,0.6)", padding:"0 4px", flexShrink:0 }}>☰</button>
 
           <button onClick={onBack}
             style={{ display:"flex", alignItems:"center", gap:5, background:"none", border:"none",
-              cursor:"pointer", color:"#8898b0", fontSize:13, padding:"5px 8px", borderRadius:6,
+              cursor:"pointer", color:"rgba(60,60,67,0.5)", fontSize:13, padding:"5px 8px", borderRadius:10,
               transition:"all .15s", fontFamily:"inherit" }}
-            onMouseEnter={e => { e.currentTarget.style.background="#f0f2f5"; e.currentTarget.style.color="#1a2332"; }}
-            onMouseLeave={e => { e.currentTarget.style.background="none"; e.currentTarget.style.color="#8898b0"; }}>
+            onMouseEnter={e => { e.currentTarget.style.background="rgba(0,0,0,0.06)"; e.currentTarget.style.color="#1c1c1e"; }}
+            onMouseLeave={e => { e.currentTarget.style.background="none"; e.currentTarget.style.color="rgba(60,60,67,0.5)"; }}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M15 18l-6-6 6-6"/></svg>
             Lobby
           </button>
 
-          <div style={{ width:1, height:18, background:"#dde1ea" }} />
+          <div style={{ width:1, height:18, background:"rgba(60,60,67,0.15)" }} />
           <div style={{ width:10, height:10, borderRadius:"50%", background:subject.couleur, flexShrink:0 }} />
-          <span style={{ fontSize:15, fontWeight:700 }}>{subject.nom}</span>
+          <span style={{ fontSize:15, fontWeight:700, color:"#1c1c1e" }}>{subject.nom}</span>
           {!isMobile && subject.soustitre && <>
-            <div style={{ width:1, height:18, background:"#dde1ea" }} />
-            <span style={{ fontSize:13, color:"#5a6880" }}>{subject.soustitre}</span>
+            <div style={{ width:1, height:18, background:"rgba(60,60,67,0.15)" }} />
+            <span style={{ fontSize:13, color:"rgba(60,60,67,0.55)" }}>{subject.soustitre}</span>
           </>}
 
           <div style={{ flex:1 }} />
-          {!isMobile && allSTs.length>0 && <span style={{ fontSize:12, color:"#9aa3b0" }}>{currentIdx+1} / {allSTs.length}</span>}
-          {!isMobile && <span style={{ fontSize:12, color:"#8898b0", maxWidth:160, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{user?.email}</span>}
+          {!isMobile && allSTs.length>0 && <span style={{ fontSize:12, color:"rgba(60,60,67,0.4)" }}>{currentIdx+1} / {allSTs.length}</span>}
+          {!isMobile && <span style={{ fontSize:12, color:"rgba(60,60,67,0.45)", maxWidth:160, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{user?.email}</span>}
           <button onClick={() => window.print()}
-            style={{ padding:"5px 14px", background:"#f5f6f9", color:"#5a6880", border:"1px solid #d8dde8", borderRadius:5, cursor:"pointer", fontSize:13 }}>⬇ PDF</button>
+            style={{ padding:"5px 14px", background:"rgba(120,120,128,0.14)", color:"rgba(60,60,67,0.7)", border:"none", borderRadius:10, cursor:"pointer", fontSize:13 }}>⬇ PDF</button>
           <button onClick={onOpenAccount}
             style={{ width:32, height:32, borderRadius:"50%",
-              background:"linear-gradient(135deg,#2454A0,#1d3a7a)", border:"none",
+              background:"linear-gradient(135deg,#007AFF,#0055CC)", border:"none",
               display:"flex", alignItems:"center", justifyContent:"center",
-              color:"#fff", fontSize:12, fontWeight:700, cursor:"pointer", flexShrink:0 }}>
+              color:"#fff", fontSize:12, fontWeight:700, cursor:"pointer", flexShrink:0,
+              boxShadow:"0 2px 8px rgba(0,122,255,0.35)" }}>
             {(user?.email?.[0]||"?").toUpperCase()}
           </button>
         </header>
@@ -2226,9 +2341,9 @@ const SubjectApp = ({ subject, user, onBack, onOpenAccount }) => {
 
             {allSTs.length===0 ? (
               <div style={{ flex:1, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center",
-                gap:16, color:"#8898b0", padding:40, textAlign:"center" }}>
+                gap:16, color:"rgba(60,60,67,0.5)", padding:40, textAlign:"center" }}>
                 <div style={{ fontSize:52 }}>📂</div>
-                <div style={{ fontSize:17, fontWeight:700, color:"#5a6880" }}>Aucun contenu</div>
+                <div style={{ fontSize:17, fontWeight:700, color:"rgba(60,60,67,0.7)" }}>Aucun contenu</div>
                 <div style={{ fontSize:14, maxWidth:280, lineHeight:1.6 }}>
                   Ajoute un thème depuis le menu latéral, puis des sous-thèmes pour commencer.
                 </div>
@@ -2236,19 +2351,22 @@ const SubjectApp = ({ subject, user, onBack, onOpenAccount }) => {
             ) : (
               <>
                 {/* Fil d'Ariane + onglets */}
-                <div style={{ background:"#fff", borderBottom:"1px solid #e2e6ed", padding:"12px 26px 0", flexShrink:0 }}>
-                  <div style={{ fontSize:12, color:"#8898b0", marginBottom:8 }}>
+                <div style={{ background:"rgba(255,255,255,0.55)", backdropFilter:"blur(18px) saturate(160%)", WebkitBackdropFilter:"blur(18px) saturate(160%)",
+                  borderBottom:"1px solid rgba(255,255,255,0.45)", padding:"12px 26px 0", flexShrink:0 }}>
+                  <div style={{ fontSize:12, color:"rgba(60,60,67,0.52)", marginBottom:8 }}>
                     {activeTheme && (localStorage.getItem(`theme_${activeTheme.id}_titre`)||activeTheme.titre)}
                     {" "}&rsaquo;{" "}
-                    <span style={{ color:"#2d60a7" }}>{stTitles[activeST?.id]||activeST?.titre}</span>
+                    <span style={{ color:"#007AFF" }}>{stTitles[activeST?.id]||activeST?.titre}</span>
                   </div>
-                  <div data-np style={{ display:"flex", gap:0 }}>
+                  <div data-np style={{ display:"flex", gap:4 }}>
                     {TABS.map(t => (
-                      <button key={t} onClick={() => setTab(t)} style={{ padding:isMobile?"10px 18px":"7px 20px",
-                        background:"none", border:"none", cursor:"pointer", fontSize:isMobile?15:14,
-                        color:tab===t?"#2d60a7":"#8898b0", fontWeight:tab===t?600:400,
-                        borderBottom:tab===t?"2px solid #2d60a7":"2px solid transparent",
-                        textTransform:"capitalize" }}>
+                      <button key={t} onClick={() => setTab(t)} style={{ padding:isMobile?"9px 18px":"7px 18px",
+                        background:tab===t?"rgba(0,122,255,0.12)":"none",
+                        border:"none", cursor:"pointer", fontSize:isMobile?15:13.5,
+                        color:tab===t?"#007AFF":"rgba(60,60,67,0.5)", fontWeight:tab===t?600:400,
+                        borderRadius:"10px 10px 0 0",
+                        borderBottom:tab===t?"2px solid #007AFF":"2px solid transparent",
+                        textTransform:"capitalize", transition:"all .15s" }}>
                         {t.charAt(0).toUpperCase()+t.slice(1)}
                       </button>
                     ))}
@@ -2268,20 +2386,22 @@ const SubjectApp = ({ subject, user, onBack, onOpenAccount }) => {
                 </div>
 
                 {/* Navigation bas */}
-                <div data-np style={{ height:52, flexShrink:0, background:"#fff", borderTop:"1px solid #e2e6ed",
+                <div data-np style={{ height:56, flexShrink:0,
+                  background:"rgba(255,255,255,0.60)", backdropFilter:"blur(18px) saturate(160%)", WebkitBackdropFilter:"blur(18px) saturate(160%)",
+                  borderTop:"1px solid rgba(255,255,255,0.48)",
                   display:"flex", alignItems:"center", justifyContent:"space-between", padding:"0 26px" }}>
                   <button onClick={() => goTo(currentIdx-1)} disabled={currentIdx<=0}
-                    style={{ padding:"6px 16px", borderRadius:6, border:"1px solid #d8dde8",
-                      background:currentIdx>0?"#f5f6f9":"transparent",
-                      color:currentIdx>0?"#1a2332":"#c4c9d4",
-                      cursor:currentIdx>0?"pointer":"default", fontSize:14 }}>← Précédent</button>
-                  <span style={{ fontSize:13, color:"#8898b0" }}>{currentIdx+1} / {allSTs.length}</span>
+                    style={{ padding:"7px 18px", borderRadius:12, border:"none",
+                      background:currentIdx>0?"rgba(120,120,128,0.14)":"transparent",
+                      color:currentIdx>0?"#1c1c1e":"rgba(60,60,67,0.25)",
+                      cursor:currentIdx>0?"pointer":"default", fontSize:14, fontWeight:500 }}>← Précédent</button>
+                  <span style={{ fontSize:13, color:"rgba(60,60,67,0.45)" }}>{currentIdx+1} / {allSTs.length}</span>
                   <button onClick={() => goTo(currentIdx+1)} disabled={currentIdx>=allSTs.length-1}
-                    style={{ padding:"6px 18px", borderRadius:6,
-                      border:`1px solid ${currentIdx<allSTs.length-1?"#2d60a7":"#d8dde8"}`,
-                      background:currentIdx<allSTs.length-1?"#2d60a7":"transparent",
-                      color:currentIdx<allSTs.length-1?"#fff":"#c4c9d4",
-                      cursor:currentIdx<allSTs.length-1?"pointer":"default", fontSize:14 }}>Suivant →</button>
+                    style={{ padding:"7px 20px", borderRadius:12, border:"none",
+                      background:currentIdx<allSTs.length-1?"#007AFF":"transparent",
+                      color:currentIdx<allSTs.length-1?"#fff":"rgba(60,60,67,0.25)",
+                      cursor:currentIdx<allSTs.length-1?"pointer":"default", fontSize:14, fontWeight:600,
+                      boxShadow:currentIdx<allSTs.length-1?"0 2px 10px rgba(0,122,255,0.35)":"none" }}>Suivant →</button>
                 </div>
               </>
             )}
@@ -2370,15 +2490,15 @@ const App = () => {
 
   if (!authReady) return (
     <div style={{ height:"100vh", display:"flex", alignItems:"center", justifyContent:"center",
-      fontFamily:"'Plus Jakarta Sans',sans-serif", color:"#8898b0", fontSize:16, background:"#f0f2f5" }}>
+      color:"rgba(60,60,67,0.5)", fontSize:16, background:"transparent" }}>
       Chargement...
     </div>
   );
   if (!user) return <LoginScreen />;
   if (syncing) return (
     <div style={{ height:"100vh", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center",
-      gap:14, fontFamily:"'Plus Jakarta Sans',sans-serif", color:"#8898b0", background:"#f0f2f5" }}>
-      <div style={{ fontSize:36, animation:"blob1 1.5s linear infinite" }}>⟳</div>
+      gap:14, color:"rgba(60,60,67,0.5)", background:"transparent" }}>
+      <div style={{ fontSize:36, animation:"blob1 1.5s linear infinite", color:"#007AFF" }}>⟳</div>
       <div style={{ fontSize:15 }}>Synchronisation des données...</div>
     </div>
   );
