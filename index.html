@@ -1675,15 +1675,15 @@ const App = () => {
 
   useEffect(()=>{
     _sb.auth.getSession().then(async({data:{session}})=>{
-      if(session?.user){ _uid=session.user.id; setSyncing(true); await loadUserData(session.user.id).catch(console.warn); _flushSyncQueue(); setSyncing(false); setUser(session.user); const s=localStorage.getItem(SUBJECTS_KEY); if(s){try{const parsed=JSON.parse(s);setSubjects(parsed);setSubjectThemes(readSubjectThemes(parsed));}catch{}} }
+      if(session?.user){ _uid=session.user.id; setSyncing(true); await loadUserData(session.user.id).catch(console.warn); _flushSyncQueue(); setSyncing(false); setUser(session.user); const s=localStorage.getItem(SUBJECTS_KEY); if(s){try{const parsed=JSON.parse(s);setSubjects(parsed);setSubjectThemes(readSubjectThemes(parsed));}catch{}} else { setSubjects(DEFAULT_SUBJECTS); setSubjectThemes(readSubjectThemes(DEFAULT_SUBJECTS)); } }
       setAuthReady(true);
     });
     const {data:{subscription}}=_sb.auth.onAuthStateChange(async(event,session)=>{
       if(event==="SIGNED_IN"&&session?.user){
         if(_uid===session.user.id){setUser(session.user);setAuthReady(true);return;}
         _uid=session.user.id; setSyncing(true); await loadUserData(session.user.id).catch(console.warn); _flushSyncQueue(); setSyncing(false); setUser(session.user); setAuthReady(true);
-        const s=localStorage.getItem(SUBJECTS_KEY); if(s){try{const parsed=JSON.parse(s);setSubjects(parsed);setSubjectThemes(readSubjectThemes(parsed));}catch{}}
-      } else if(event==="SIGNED_OUT"){ _uid=null; _clearLocalData(); setUser(null); }
+        const s=localStorage.getItem(SUBJECTS_KEY); if(s){try{const parsed=JSON.parse(s);setSubjects(parsed);setSubjectThemes(readSubjectThemes(parsed));}catch{}} else { setSubjects(DEFAULT_SUBJECTS); setSubjectThemes(readSubjectThemes(DEFAULT_SUBJECTS)); }
+      } else if(event==="SIGNED_OUT"){ _uid=null; _clearLocalData(); setUser(null); setScreen("lobby"); setActiveSubjectId(null); setSubjects(DEFAULT_SUBJECTS); setSubjectThemes(readSubjectThemes(DEFAULT_SUBJECTS)); }
     });
     return()=>subscription.unsubscribe();
   },[]);
