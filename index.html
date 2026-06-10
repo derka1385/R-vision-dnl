@@ -44,73 +44,49 @@
     /* ══════════════════════════════════════════════════════════════
        STUDYSPACE · iOS 27 Liquid Glass — Design System 2.0
        ══════════════════════════════════════════════════════════════ */
-    /* ═══ BLEU ARDOISE — Système de thèmes ═══ */
-    :root, [data-theme="dark"] {
-      --bg: #111520; --bg2: #161b2c;
-      --sidebar-bg: #0d1020; --sidebar-border: rgba(255,255,255,0.07);
-      --header-bg: rgba(13,16,32,0.97); --header-border: rgba(255,255,255,0.07);
-      --surface: rgba(255,255,255,0.07); --surface2: rgba(255,255,255,0.12);
-      --sep: rgba(255,255,255,0.08); --fill: rgba(255,255,255,0.07);
-      --t1: rgba(255,255,255,0.92); --t2: rgba(255,255,255,0.60);
-      --t3: rgba(255,255,255,0.34); --t4: rgba(255,255,255,0.16);
-      --l1: rgba(255,255,255,0.92); --l2: rgba(255,255,255,0.60);
-      --l3: rgba(255,255,255,0.34); --l4: rgba(255,255,255,0.16);
-      --border: rgba(255,255,255,0.09);
-      --accent: #4B72E8; --accent-t: rgba(75,114,232,0.16);
-      --blue: #4B72E8; --blue-t: rgba(75,114,232,0.16);
+    :root {
+      --blue:   #0A84FF; --blue-t: rgba(10,132,255,0.18);
       --purple: #5E5CE6; --green: #30D158;
       --orange: #FF9F0A; --red: #FF453A; --teal: #64D2FF;
-      --pill-active-bg: rgba(75,114,232,0.18);
-      --pill-active-color: #7B9CF0;
-      --input-bg: rgba(255,255,255,0.07);
-      --scrollbar: rgba(255,255,255,0.12);
-      --card-bg: rgba(13,16,32,0.93); --card-text: rgba(255,255,255,0.80);
-      --canvas-bg: #111520; --canvas-dot: rgba(255,255,255,0.09);
-      --dashed-border: rgba(255,255,255,0.18);
-    }
-    [data-theme="light"] {
-      --bg: #ECEEF6; --bg2: #E4E8F2;
-      --sidebar-bg: #F8F9FD; --sidebar-border: rgba(0,0,0,0.08);
-      --header-bg: rgba(248,249,253,0.97); --header-border: rgba(0,0,0,0.08);
-      --surface: rgba(255,255,255,0.85); --surface2: rgba(255,255,255,0.98);
-      --sep: rgba(0,0,0,0.07); --fill: rgba(0,0,0,0.05);
-      --t1: rgba(0,0,0,0.88); --t2: rgba(0,0,0,0.58);
-      --t3: rgba(0,0,0,0.38); --t4: rgba(0,0,0,0.22);
-      --l1: rgba(0,0,0,0.88); --l2: rgba(0,0,0,0.58);
-      --l3: rgba(0,0,0,0.38); --l4: rgba(0,0,0,0.22);
-      --border: rgba(0,0,0,0.09);
-      --accent: #3A65D8; --accent-t: rgba(58,101,216,0.13);
-      --blue: #3A65D8; --blue-t: rgba(58,101,216,0.13);
-      --purple: #5553C8; --green: #1A9641;
-      --orange: #B86800; --red: #CC2B20; --teal: #0080A0;
-      --pill-active-bg: rgba(58,101,216,0.13);
-      --pill-active-color: #3A65D8;
-      --input-bg: rgba(255,255,255,0.92);
-      --scrollbar: rgba(0,0,0,0.12);
-      --card-bg: rgba(255,255,255,0.96); --card-text: rgba(0,0,0,0.74);
-      --canvas-bg: #E9EDF7; --canvas-dot: rgba(0,0,0,0.07);
-      --dashed-border: rgba(0,0,0,0.14);
+      --l1: rgba(255,255,255,0.94); --l2: rgba(255,255,255,0.62);
+      --l3: rgba(255,255,255,0.36); --l4: rgba(255,255,255,0.18);
+      --sep: rgba(255,255,255,0.09); --fill: rgba(255,255,255,0.07);
     }
     *, *::before, *::after { box-sizing: border-box; }
     html, body, #root { height: 100%; margin: 0; padding: 0; }
     body {
       font-family: -apple-system,"SF Pro Display","SF Pro Text","Helvetica Neue",Inter,sans-serif;
-      background: var(--bg); color: var(--t1);
-      transition: background .30s ease, color .30s ease;
+      background: #0b0d1c; color: var(--l1);
       -webkit-font-smoothing: antialiased;
+    }
+    body::before {
+      content:''; position:fixed; inset:0; z-index:-1;
+      background:
+        radial-gradient(ellipse 68% 55% at 8%  13%, rgba(50,110,235,0.46) 0%, transparent 58%),
+        radial-gradient(ellipse 54% 68% at 93% 88%, rgba(120,75,230,0.40) 0%, transparent 58%),
+        radial-gradient(ellipse 60% 44% at 77% 7%,  rgba(220,58,138,0.26) 0%, transparent 54%),
+        radial-gradient(ellipse 46% 56% at 5%  83%, rgba(18,175,158,0.20) 0%, transparent 54%),
+        radial-gradient(ellipse 38% 36% at 52% 50%, rgba(90,88,228,0.14) 0%, transparent 60%),
+        #0b0d1c;
+      animation: meshShift 36s ease infinite alternate;
+    }
+    @keyframes meshShift {
+      0%   { filter:hue-rotate(0deg)   brightness(1.00); }
+      45%  { filter:hue-rotate(16deg)  brightness(1.04); }
+      100% { filter:hue-rotate(-10deg) brightness(0.97); }
     }
     h1,h2,h3,p { margin:0; }
     button { font-family:inherit; }
     [contenteditable] { cursor:text; }
-    [contenteditable]:hover  { background:var(--surface); border-radius:6px; }
-    [contenteditable]:focus  { outline:2px solid var(--accent-t); outline-offset:2px; border-radius:6px; background:var(--accent-t); }
-    [contenteditable]:empty::before { content:attr(data-ph); color:var(--t4); font-style:italic; pointer-events:none; }
+    [contenteditable]:hover  { background:rgba(255,255,255,0.05); border-radius:6px; }
+    [contenteditable]:focus  { outline:2px solid rgba(10,132,255,.36); outline-offset:2px; border-radius:6px; background:rgba(10,132,255,.05); }
+    [contenteditable]:empty::before { content:attr(data-ph); color:var(--l4); font-style:italic; pointer-events:none; }
     ::-webkit-scrollbar { width:4px; height:4px; }
     ::-webkit-scrollbar-track { background:transparent; }
-    ::-webkit-scrollbar-thumb { background:var(--scrollbar); border-radius:2px; }
-    input,textarea { color:var(--t1) !important; font-family:inherit; }
-    input::placeholder,textarea::placeholder { color:var(--t4) !important; }
-    input:-webkit-autofill { -webkit-box-shadow:0 0 0 30px var(--input-bg) inset !important; -webkit-text-fill-color:var(--t1) !important; }
+    ::-webkit-scrollbar-thumb { background:rgba(255,255,255,0.14); border-radius:2px; }
+    input,textarea { color:var(--l1) !important; font-family:inherit; }
+    input::placeholder,textarea::placeholder { color:var(--l4) !important; }
+    input:-webkit-autofill { -webkit-box-shadow:0 0 0 30px rgba(14,16,28,0.96) inset !important; -webkit-text-fill-color:rgba(255,255,255,0.92) !important; }
     @keyframes fadeInUp { from{opacity:0;transform:translateY(12px) scale(.975);}to{opacity:1;transform:none;} }
     @keyframes blob1 { 0%,100%{transform:translate(0,0)scale(1);} 33%{transform:translate(28px,-18px)scale(1.04);} 66%{transform:translate(-18px,14px)scale(0.97);} }
     @keyframes blob2 { 0%,100%{transform:translate(0,0)scale(1);} 33%{transform:translate(-22px,18px)scale(1.03);} 66%{transform:translate(18px,-12px)scale(0.98);} }
@@ -149,28 +125,194 @@ const _clearLocalData = () => {
   if (window.__cache) window.__cache.clear();
 };
 const _origSet = window.__origSet || ((k, v) => localStorage.setItem(k, v));
+
+// ════════════════════════════════════════════════════════════════
+//  SYNC STRUCTURÉE — tables subjects / themes / sous_themes /
+//  quiz_cards / canvas_cards. Les champs libres du Dossier, les PDF
+//  et les images restent dans content / images.
+// ════════════════════════════════════════════════════════════════
+const _warn = (tag) => ({ error }) => { if (error) console.warn("sync " + tag + ":", error.message); };
+const _notIn = (q, ids) => ids.length ? q.not("id", "in", "(" + ids.map(i => '"' + i + '"').join(",") + ")") : q;
+
+const _pushSubjects = (v) => {
+  let list; try { list = JSON.parse(v); } catch { return; }
+  if (!Array.isArray(list)) return;
+  const rows = list.map(s => ({ user_id:_uid, id:s.id, nom:s.nom||"", soustitre:s.soustitre||"", couleur:s.couleur||"#007AFF", emoji:s.emoji||"📚" }));
+  const run = async () => {
+    if (rows.length) await _sb.from("subjects").upsert(rows).then(_warn("subjects"));
+    await _notIn(_sb.from("subjects").delete().eq("user_id", _uid), list.map(s => s.id)).then(_warn("subjects del"));
+  };
+  run().catch(e => console.warn("sync:", e));
+};
+
+const _pushThemes = (sid, v) => {
+  let themes; try { themes = JSON.parse(v); } catch { return; }
+  if (!Array.isArray(themes)) return;
+  const tRows = [], stRows = [], tIds = [], stIds = [];
+  themes.forEach((t, ti) => {
+    const titre = localStorage.getItem(`theme_${t.id}_titre`) || t.titre || "";
+    tRows.push({ user_id:_uid, id:t.id, subject_id:sid, titre, ord:ti });
+    tIds.push(t.id);
+    (t.sousThemes||[]).forEach((st, si) => {
+      const stTitre = localStorage.getItem(`${st.id}_titre`) || st.titre || "";
+      stRows.push({ user_id:_uid, id:st.id, theme_id:t.id, titre:stTitre, ord:si, dissertation_sujet:"", dissertation_texte:"" });
+      stIds.push(st.id);
+    });
+  });
+  const run = async () => {
+    if (tRows.length)  await _sb.from("themes").upsert(tRows).then(_warn("themes"));
+    if (stRows.length) await _sb.from("sous_themes").upsert(stRows).then(_warn("sous_themes"));
+    await _notIn(_sb.from("themes").delete().eq("user_id", _uid).eq("subject_id", sid), tIds).then(_warn("themes del"));
+    if (tIds.length)
+      await _notIn(_sb.from("sous_themes").delete().eq("user_id", _uid).in("theme_id", tIds), stIds).then(_warn("st del"));
+  };
+  run().catch(e => console.warn("sync:", e));
+};
+
+const _pushQuiz = (stid, v) => {
+  let list; try { list = JSON.parse(v); } catch { return; }
+  if (!Array.isArray(list)) return;
+  const rows = list.map((c, i) => ({
+    user_id:_uid, id:`${stid}__${c.id}`, sous_theme_id:stid,
+    question: localStorage.getItem(`${stid}_q_${c.id}_q`) ?? c.question ?? "",
+    answer:   localStorage.getItem(`${stid}_q_${c.id}_a`) ?? c.answer ?? "",
+    is_known: !!c.known, ord:i
+  }));
+  const run = async () => {
+    if (rows.length) await _sb.from("quiz_cards").upsert(rows).then(_warn("quiz"));
+    await _notIn(_sb.from("quiz_cards").delete().eq("user_id", _uid).eq("sous_theme_id", stid), rows.map(r => r.id)).then(_warn("quiz del"));
+  };
+  run().catch(e => console.warn("sync:", e));
+};
+
+const _pushCanvas = (stid, v) => {
+  let list; try { list = JSON.parse(v); } catch { return; }
+  if (!Array.isArray(list)) return;
+  const rows = list.map((c, i) => ({
+    user_id:_uid, id:`${stid}__${c.id}`, sous_theme_id:stid,
+    title:c.title||"", color:c.color||"#3b6ea5",
+    x:c.x||0, y:c.y||0, w:c.w||300, h:c.h||200,
+    type:c.type||"text", content:c.content||"", img_ratio:c.imgRatio||0, ord:i
+  }));
+  const run = async () => {
+    if (rows.length) await _sb.from("canvas_cards").upsert(rows).then(_warn("canvas"));
+    await _notIn(_sb.from("canvas_cards").delete().eq("user_id", _uid).eq("sous_theme_id", stid), rows.map(r => r.id)).then(_warn("canvas del"));
+  };
+  run().catch(e => console.warn("sync:", e));
+};
+
+// Débounce par clé pour éviter de marteler le serveur
+const _debounces = new Map();
+const _debounced = (k, fn, ms = 700) => {
+  clearTimeout(_debounces.get(k));
+  _debounces.set(k, setTimeout(fn, ms));
+};
+
 window.__syncPush = (k, v) => {
   if (!_uid) return;
+
+  // ── Clés structurées ──────────────────────────────────────────
+  if (k === "app_subjects") return _debounced(k, () => _pushSubjects(v));
+
+  let m;
+  if ((m = k.match(/^subj_(.+)_themes$/)))
+    return _debounced(k, () => _pushThemes(m[1], localStorage.getItem(k) ?? v));
+  if ((m = k.match(/^theme_(.+)_titre$/)))
+    return _debounced(k, () => _sb.from("themes").update({ titre:v }).eq("user_id",_uid).eq("id",m[1]).then(_warn("theme titre")));
+  if ((m = k.match(/^(.+)_canvas_state$/)))
+    return _debounced(k, () => _pushCanvas(m[1], localStorage.getItem(k) ?? v));
+  if ((m = k.match(/^(.+)_q_(.+)_q$/)))
+    return _debounced(k, () => _sb.from("quiz_cards").update({ question:v }).eq("user_id",_uid).eq("id",`${m[1]}__${m[2]}`).then(_warn("quiz q")));
+  if ((m = k.match(/^(.+)_q_(.+)_a$/)))
+    return _debounced(k, () => _sb.from("quiz_cards").update({ answer:v }).eq("user_id",_uid).eq("id",`${m[1]}__${m[2]}`).then(_warn("quiz a")));
+  if ((m = k.match(/^(.+)_quiz$/)))
+    return _debounced(k, () => _pushQuiz(m[1], localStorage.getItem(k) ?? v));
+  if ((m = k.match(/^(.+)_titre$/)) && !k.startsWith("theme_"))
+    return _debounced(k, () => _sb.from("sous_themes").update({ titre:v }).eq("user_id",_uid).eq("id",m[1]).then(_warn("st titre")));
+
+  // ── Clés libres (Dossier, PDF, annotations, images) ──────────
   const isImg = k.startsWith("img_");
   const row = isImg ? { user_id:_uid, key:k.slice(4), data:v } : { user_id:_uid, key:k, value:v };
-  _sb.from(isImg ? "images" : "content").upsert(row, { onConflict: "user_id,key" })
-     .then(({ error }) => { if (error) console.warn("sync:", error.message, k); })
-     .catch(e => console.warn("sync:", e));
+  _debounced(k, () => _sb.from(isImg ? "images" : "content").upsert(row, { onConflict: "user_id,key" })
+     .then(_warn(k))
+     .catch(e => console.warn("sync:", e)));
 };
+
 const _flushSyncQueue = () => {
   const q = window.__syncQueue || []; window.__syncQueue = [];
   q.forEach(([k, v]) => window.__syncPush(k, v));
 };
+
 const loadUserData = async (uid) => {
   _clearLocalData();
-  const [{ data:rows, error:e1 }, { data:imgs, error:e2 }] = await Promise.all([
+  const [subjects, themes, sousThemes, quiz, canvas, content, images] = await Promise.all([
+    _sb.from("subjects").select("*").eq("user_id", uid).order("created_at"),
+    _sb.from("themes").select("*").eq("user_id", uid).order("ord"),
+    _sb.from("sous_themes").select("*").eq("user_id", uid).order("ord"),
+    _sb.from("quiz_cards").select("*").eq("user_id", uid).order("ord"),
+    _sb.from("canvas_cards").select("*").eq("user_id", uid).order("ord"),
     _sb.from("content").select("key,value").eq("user_id", uid),
     _sb.from("images").select("key,data").eq("user_id", uid),
   ]);
-  if (e1) console.warn("content:", e1.message);
-  if (e2) console.warn("images:", e2.message);
-  if (rows) rows.forEach(r => { try { _origSet(r.key, r.value); } catch {} });
-  if (imgs) imgs.forEach(r => { try { _origSet("img_"+r.key, r.data); } catch {} });
+  [subjects, themes, sousThemes, quiz, canvas, content, images].forEach(r => { if (r.error) console.warn("pull:", r.error.message); });
+
+  // 1) Champs libres d'abord (l'ancien format sert de base / migration)
+  (content.data||[]).forEach(r => { try { _origSet(r.key, r.value); } catch {} });
+  (images.data||[]).forEach(r => { try { _origSet("img_"+r.key, r.data); } catch {} });
+
+  // 2) Tables structurées (prioritaires : elles écrasent l'ancien format)
+  const subjList = subjects.data || [];
+  if (subjList.length) {
+    _origSet("app_subjects", JSON.stringify(subjList.map(s => ({ id:s.id, nom:s.nom, soustitre:s.soustitre, couleur:s.couleur, emoji:s.emoji }))));
+    subjList.forEach(s => {
+      const subjThemes = (themes.data||[]).filter(t => t.subject_id === s.id);
+      const nested = subjThemes.map(t => ({
+        id:t.id, titre:t.titre,
+        sousThemes:(sousThemes.data||[]).filter(st => st.theme_id === t.id).map(st => ({ id:st.id, titre:st.titre }))
+      }));
+      _origSet(`subj_${s.id}_themes`, JSON.stringify(nested));
+      subjThemes.forEach(t => _origSet(`theme_${t.id}_titre`, t.titre));
+    });
+    (sousThemes.data||[]).forEach(st => _origSet(`${st.id}_titre`, st.titre));
+
+    // Quiz par sous-thème (id serveur = "<stid>__<localId>")
+    const quizBySt = {};
+    (quiz.data||[]).forEach(q => { (quizBySt[q.sous_theme_id] ||= []).push(q); });
+    Object.entries(quizBySt).forEach(([stid, qs]) => {
+      const local = qs.map(q => {
+        const localId = q.id.startsWith(stid + "__") ? q.id.slice(stid.length + 2) : q.id;
+        _origSet(`${stid}_q_${localId}_q`, q.question);
+        _origSet(`${stid}_q_${localId}_a`, q.answer);
+        return { id:localId, question:q.question, answer:q.answer, known:q.is_known };
+      });
+      _origSet(`${stid}_quiz`, JSON.stringify(local));
+    });
+
+    // Canvas par sous-thème
+    const cvBySt = {};
+    (canvas.data||[]).forEach(c => { (cvBySt[c.sous_theme_id] ||= []).push(c); });
+    Object.entries(cvBySt).forEach(([stid, cs]) => {
+      const local = cs.map(c => ({
+        id: c.id.startsWith(stid + "__") ? c.id.slice(stid.length + 2) : c.id,
+        title:c.title, color:c.color, x:c.x, y:c.y, w:c.w, h:c.h,
+        type:c.type, content:c.content, imgRatio:c.img_ratio || undefined
+      }));
+      _origSet(`${stid}_canvas_state`, JSON.stringify(local));
+    });
+  } else {
+    // 3) Migration : serveur structuré vide mais anciennes données présentes
+    const subjRaw = localStorage.getItem("app_subjects");
+    if (subjRaw) {
+      _pushSubjects(subjRaw);
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i); if (!k) continue;
+        let m;
+        if ((m = k.match(/^subj_(.+)_themes$/)))   _pushThemes(m[1], localStorage.getItem(k));
+        else if ((m = k.match(/^(.+)_quiz$/)))     _pushQuiz(m[1], localStorage.getItem(k));
+        else if ((m = k.match(/^(.+)_canvas_state$/))) _pushCanvas(m[1], localStorage.getItem(k));
+      }
+    }
+  }
 };
 const DB = {
   read:    k      => { try { return localStorage.getItem(k); }               catch { return null; } },
@@ -243,9 +385,6 @@ const Ic = {
   write:     (s=14)=><svg width={s} height={s} viewBox="0 0 14 14" fill="none"><path d="M1.5 12h3L11.5 5 9 2.5l-7.5 7.5L1.5 12z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round"/><path d="M9 2.5l2.5 2.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/></svg>,
   chevDown:  (s=11)=><svg width={s} height={s} viewBox="0 0 11 11" fill="none"><path d="M2 4l3.5 3.5L9 4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/></svg>,
   grab:      (s=12)=><svg width={s} height={s} viewBox="0 0 12 12" fill="none"><circle cx="4.5" cy="3" r="1" fill="currentColor"/><circle cx="4.5" cy="6" r="1" fill="currentColor"/><circle cx="4.5" cy="9" r="1" fill="currentColor"/><circle cx="7.5" cy="3" r="1" fill="currentColor"/><circle cx="7.5" cy="6" r="1" fill="currentColor"/><circle cx="7.5" cy="9" r="1" fill="currentColor"/></svg>,
-  home:      (s=15)=><svg width={s} height={s} viewBox="0 0 15 15" fill="none"><path d="M1.5 7L7.5 2l6 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/><path d="M3.5 5.8V12a.5.5 0 00.5.5H6V9.5h3V12.5h2a.5.5 0 00.5-.5V5.8" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></svg>,
-  sun:       (s=15)=><svg width={s} height={s} viewBox="0 0 15 15" fill="none"><circle cx="7.5" cy="7.5" r="2.6" stroke="currentColor" strokeWidth="1.4"/><path d="M7.5 1v1.5M7.5 12.5V14M14 7.5h-1.5M2.5 7.5H1M12.2 2.8l-1.1 1.1M3.9 11.1l-1.1 1.1M12.2 12.2l-1.1-1.1M3.9 3.9L2.8 2.8" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/></svg>,
-  moon:      (s=15)=><svg width={s} height={s} viewBox="0 0 15 15" fill="none"><path d="M12.5 9.5A6 6 0 015.5 2.5a6 6 0 000 10 6 6 0 007-3z" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></svg>,
 };
 
 const Logo = ({ size=36 }) => (
@@ -293,8 +432,8 @@ const ImgSlot = ({ storageKey, height=140 }) => {
       onDrop={e => { e.preventDefault(); charger(e.dataTransfer.files[0]); }}
       onDragOver={e => e.preventDefault()}
       style={{ width:"100%", height, borderRadius:10, overflow:"hidden", cursor:"pointer", position:"relative",
-        background: src ? "var(--bg2)" : "var(--fill)",
-        border: src ? "none" : "1.5px dashed var(--dashed-border)",
+        background: src ? "#000" : "rgba(255,255,255,0.06)",
+        border: src ? "none" : "1.5px dashed rgba(255,255,255,0.20)",
         display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
       {src
         ? <img src={src} alt="" style={{ width:"100%", height:"100%", objectFit:"cover" }} />
@@ -497,8 +636,8 @@ const PDFAnnotator = ({ pdfData, pdfName, annotKey, onRemove }) => {
   const toolIcons={ stylo:Ic.pencil(13), surligner:Ic.sparkle(13), souligner:Ic.underline(13), gomme:Ic.eraser(13) };
 
   const toolbar=(
-    <div style={{ background:"var(--header-bg)", backdropFilter:"blur(40px) saturate(200%)", WebkitBackdropFilter:"blur(40px) saturate(200%)", borderBottom:"1px solid var(--sep)", padding:"0 10px", height:46, display:"flex", alignItems:"center", gap:5, flexWrap:"nowrap", flexShrink:0 }}>
-      <div style={{ display:"flex", background:"var(--fill)", borderRadius:50, padding:"2px", gap:1, flexShrink:0 }}>
+    <div style={{ background:"rgba(12,14,26,0.92)", backdropFilter:"blur(40px) saturate(200%)", WebkitBackdropFilter:"blur(40px) saturate(200%)", borderBottom:"1px solid var(--sep)", padding:"0 10px", height:46, display:"flex", alignItems:"center", gap:5, flexWrap:"nowrap", flexShrink:0 }}>
+      <div style={{ display:"flex", background:"rgba(255,255,255,0.07)", borderRadius:50, padding:"2px", gap:1, flexShrink:0 }}>
         {[{k:"view",label:"Voir",icon:Ic.eye(13)},{k:"edit",label:"Annoter",icon:Ic.pencil(13)}].map(({k,label,icon})=>{
           const active=k==="edit"?editMode:!editMode;
           return <button key={k} onClick={()=>setEditMode(k==="edit")} style={{ display:"flex", alignItems:"center", gap:5, padding:"5px 12px", background:active?"rgba(10,132,255,0.22)":"transparent", color:active?"#0A84FF":"var(--l3)", border:"none", cursor:"pointer", fontSize:12, fontWeight:active?600:400, borderRadius:50, transition:"all .15s" }}>{icon} {label}</button>;
@@ -506,7 +645,7 @@ const PDFAnnotator = ({ pdfData, pdfName, annotKey, onRemove }) => {
       </div>
       {editMode && <div style={{ width:1, height:18, background:"var(--sep)", flexShrink:0 }} />}
       {editMode && Object.entries(ANNOT_TOOLS).map(([key,cfg])=>(
-        <button key={key} onClick={()=>handleToolChange(key)} style={{ display:"flex", alignItems:"center", gap:5, padding:"5px 10px", background:tool===key?"rgba(10,132,255,0.20)":"var(--fill)", border:`1px solid ${tool===key?"rgba(10,132,255,0.50)":"var(--border)"}`, color:tool===key?"#0A84FF":"var(--l3)", cursor:"pointer", fontSize:12, fontWeight:tool===key?600:400, borderRadius:9, transition:"all .12s", flexShrink:0 }}>{toolIcons[key]} {cfg.label}</button>
+        <button key={key} onClick={()=>handleToolChange(key)} style={{ display:"flex", alignItems:"center", gap:5, padding:"5px 10px", background:tool===key?"rgba(10,132,255,0.20)":"rgba(255,255,255,0.06)", border:`1px solid ${tool===key?"rgba(10,132,255,0.50)":"transparent"}`, color:tool===key?"#0A84FF":"var(--l3)", cursor:"pointer", fontSize:12, fontWeight:tool===key?600:400, borderRadius:9, transition:"all .12s", flexShrink:0 }}>{toolIcons[key]} {cfg.label}</button>
       ))}
       {editMode && <div style={{ width:1, height:18, background:"var(--sep)", flexShrink:0 }} />}
       {editMode && tool!=="gomme" && colorSet.map(c=>(
@@ -520,14 +659,14 @@ const PDFAnnotator = ({ pdfData, pdfName, annotKey, onRemove }) => {
       ))}
       <div style={{ width:1, height:18, background:"var(--sep)", flexShrink:0 }} />
       <div style={{ display:"flex", alignItems:"center", gap:3, flexShrink:0 }}>
-        <button onClick={()=>setZoom(z=>Math.max(0.3,z*0.85))} style={{ width:26,height:26,borderRadius:8,border:"1px solid var(--border)",background:"var(--fill)",color:"var(--l2)",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center" }}>{Ic.zoomOut(13)}</button>
-        <button onClick={()=>setZoom(1)} style={{ padding:"0 7px",height:26,borderRadius:8,border:"1px solid var(--border)",background:"var(--fill)",color:"var(--l2)",cursor:"pointer",fontSize:11,minWidth:44 }}>{Math.round(zoom*100)}%</button>
-        <button onClick={()=>setZoom(z=>Math.min(3,z*1.15))} style={{ width:26,height:26,borderRadius:8,border:"1px solid var(--border)",background:"var(--fill)",color:"var(--l2)",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center" }}>{Ic.zoomIn(13)}</button>
+        <button onClick={()=>setZoom(z=>Math.max(0.3,z*0.85))} style={{ width:26,height:26,borderRadius:8,border:"none",background:"rgba(255,255,255,0.08)",color:"var(--l2)",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center" }}>{Ic.zoomOut(13)}</button>
+        <button onClick={()=>setZoom(1)} style={{ padding:"0 7px",height:26,borderRadius:8,border:"none",background:"rgba(255,255,255,0.08)",color:"var(--l2)",cursor:"pointer",fontSize:11,minWidth:44 }}>{Math.round(zoom*100)}%</button>
+        <button onClick={()=>setZoom(z=>Math.min(3,z*1.15))} style={{ width:26,height:26,borderRadius:8,border:"none",background:"rgba(255,255,255,0.08)",color:"var(--l2)",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center" }}>{Ic.zoomIn(13)}</button>
       </div>
       <div style={{ flex:1 }} />
-      {editMode && <><button onClick={handleUndo} style={{ display:"flex",alignItems:"center",gap:5,padding:"5px 10px",borderRadius:9,border:"1px solid var(--border)",background:"var(--fill)",color:"var(--l2)",cursor:"pointer",fontSize:12 }}>{Ic.undo(13)} Annuler</button><button onClick={handleClearAll} style={{ display:"flex",alignItems:"center",gap:5,padding:"5px 10px",borderRadius:9,border:"none",background:"rgba(255,69,58,0.12)",color:"var(--red)",cursor:"pointer",fontSize:12 }}>{Ic.trash(13)} Effacer</button></>}
-      <button onClick={()=>setFullscreen(f=>!f)} style={{ display:"flex",alignItems:"center",gap:5,padding:"5px 10px",borderRadius:9,border:"1px solid var(--border)",background:"var(--fill)",color:"var(--l2)",cursor:"pointer",fontSize:12 }}>{fullscreen?Ic.minimize(13):Ic.maximize(13)} {fullscreen?"Réduire":"Plein écran"}</button>
-      {onRemove && <button onClick={onRemove} style={{ padding:"5px 10px",borderRadius:9,border:"1px solid var(--border)",background:"var(--fill)",color:"var(--l3)",cursor:"pointer",fontSize:12 }}>Retirer</button>}
+      {editMode && <><button onClick={handleUndo} style={{ display:"flex",alignItems:"center",gap:5,padding:"5px 10px",borderRadius:9,border:"none",background:"rgba(255,255,255,0.08)",color:"var(--l2)",cursor:"pointer",fontSize:12 }}>{Ic.undo(13)} Annuler</button><button onClick={handleClearAll} style={{ display:"flex",alignItems:"center",gap:5,padding:"5px 10px",borderRadius:9,border:"none",background:"rgba(255,69,58,0.12)",color:"var(--red)",cursor:"pointer",fontSize:12 }}>{Ic.trash(13)} Effacer</button></>}
+      <button onClick={()=>setFullscreen(f=>!f)} style={{ display:"flex",alignItems:"center",gap:5,padding:"5px 10px",borderRadius:9,border:"none",background:"rgba(255,255,255,0.08)",color:"var(--l2)",cursor:"pointer",fontSize:12 }}>{fullscreen?Ic.minimize(13):Ic.maximize(13)} {fullscreen?"Réduire":"Plein écran"}</button>
+      {onRemove && <button onClick={onRemove} style={{ padding:"5px 10px",borderRadius:9,border:"none",background:"rgba(255,255,255,0.08)",color:"var(--l3)",cursor:"pointer",fontSize:12 }}>Retirer</button>}
     </div>
   );
 
@@ -590,7 +729,7 @@ const DossierView = ({ st, sid, onTitleChange }) => {
           <div onClick={()=>{const i=document.createElement("input");i.type="file";i.accept="application/pdf";i.onchange=e=>loadPdf(e.target.files[0]);i.click();}}
             onDrop={e=>{e.preventDefault();setDragOver(false);loadPdf(e.dataTransfer.files[0]);}}
             onDragOver={e=>{e.preventDefault();setDragOver(true);}} onDragLeave={()=>setDragOver(false)}
-            style={{ border:`1.5px dashed ${dragOver?"var(--blue)":"var(--dashed-border)"}`,borderRadius:14,padding:"48px 20px",textAlign:"center",background:dragOver?"var(--blue-t)":"var(--fill)",backdropFilter:"blur(12px)",WebkitBackdropFilter:"blur(12px)",cursor:"pointer",transition:"all .18s" }}>
+            style={{ border:`1.5px dashed ${dragOver?"var(--blue)":"rgba(255,255,255,0.18)"}`,borderRadius:14,padding:"48px 20px",textAlign:"center",background:dragOver?"rgba(10,132,255,0.08)":"rgba(255,255,255,0.05)",backdropFilter:"blur(12px)",WebkitBackdropFilter:"blur(12px)",cursor:"pointer",transition:"all .18s" }}>
             <div style={{ display:"flex",justifyContent:"center",marginBottom:10,color:"var(--l4)" }}>{Ic.pdf(28)}</div>
             <div style={{ fontWeight:600,color:"var(--l2)",marginBottom:4 }}>Glisser un PDF ici</div>
             <div style={{ fontSize:12,color:"var(--l4)" }}>ou cliquer pour parcourir</div>
@@ -603,12 +742,12 @@ const DossierView = ({ st, sid, onTitleChange }) => {
           <span style={{ display:"flex",alignItems:"center",gap:7,fontSize:13,fontWeight:600,color:"var(--l3)" }}>{Ic.write(14)} Dissertation finale</span>
           <div style={{ flex:1,height:1,background:"var(--sep)" }} />
         </div>
-        <div style={{ background:"var(--fill)",borderRadius:10,padding:"10px 14px",marginBottom:14,border:"1px solid var(--sep)",display:"flex",gap:8,alignItems:"center" }}>
+        <div style={{ background:"rgba(255,255,255,0.05)",borderRadius:10,padding:"10px 14px",marginBottom:14,border:"1px solid var(--sep)",display:"flex",gap:8,alignItems:"center" }}>
           <span style={{ fontSize:12,color:"var(--l4)",flexShrink:0 }}>Sujet :</span>
           <E defaultVal={st.dissertation||""} storageKey={k("diss")} tag="span" ph="Sujet de la dissertation..." style={{ fontSize:14,color:"var(--l1)",fontWeight:500,flex:1 }} />
         </div>
         <E defaultVal="" storageKey={k("disstxt")} tag="div" ph="Rédiger la dissertation ici..."
-          style={{ fontSize:14,lineHeight:1.9,color:"var(--l1)",minHeight:320,padding:"14px 16px",border:"1px solid var(--border)",borderRadius:12,background:"var(--fill)",backdropFilter:"blur(12px)",WebkitBackdropFilter:"blur(12px)" }} />
+          style={{ fontSize:14,lineHeight:1.9,color:"var(--l1)",minHeight:320,padding:"14px 16px",border:"1px solid rgba(255,255,255,0.09)",borderRadius:12,background:"rgba(255,255,255,0.05)",backdropFilter:"blur(12px)",WebkitBackdropFilter:"blur(12px)" }} />
       </div>
     </div>
   );
@@ -633,13 +772,14 @@ const Lightbox = ({ src, type, name, onClose }) => {
 //  CANVAS MINDMAP
 // ════════════════════════════════════════════════════════════════
 const CARD_COLORS=["#3b6ea5","#c96a2a","#5b8a3a","#8b4a9a","#2a8a7a","#6b7890","#a04040","#c0983a"];
+// Blocs par défaut centrés sur le milieu du calque (3000×2000 → centre 1500,1000)
 const CANVAS_DEFAULTS=[
-  {id:"lf",title:"Leitfrage",color:"#c96a2a",x:20,y:20,w:520,h:130,type:"text",content:"Problématique à synthétiser..."},
-  {id:"bg",title:"Schlüsselbegriffe",color:"#3b6ea5",x:20,y:170,w:280,h:320,type:"text",content:"• Begriff 1\n• Begriff 2\n• Begriff 3"},
-  {id:"map",title:"Karte / Schéma",color:"#5b8a3a",x:320,y:170,w:280,h:320,type:"image"},
-  {id:"arg",title:"Hauptargumente",color:"#8b4a9a",x:620,y:20,w:480,h:470,type:"text",content:"Argument 1...\n\nArgument 2...\n\nArgument 3..."},
-  {id:"bil",title:"Bilan",color:"#2a8a7a",x:20,y:510,w:820,h:130,type:"text",content:"Synthèse et conclusion du sous-thème..."},
-  {id:"lnk",title:"Liens entre thèmes",color:"#6b7890",x:860,y:510,w:240,h:130,type:"text",content:"↔ Thème 2\n↔ Thème 3"},
+  {id:"lf",title:"🎯 Problématique",color:"#c96a2a",x:1240,y:680,w:520,h:130,type:"text",content:"Problématique à synthétiser..."},
+  {id:"bg",title:"📌 Notions clés",color:"#3b6ea5",x:910,y:840,w:280,h:320,type:"text",content:"• Notion 1\n• Notion 2\n• Notion 3"},
+  {id:"map",title:"🗺 Carte / Schéma",color:"#5b8a3a",x:1820,y:840,w:280,h:320,type:"image"},
+  {id:"arg",title:"💬 Arguments",color:"#8b4a9a",x:1270,y:850,w:460,h:300,type:"text",content:"Argument 1...\n\nArgument 2...\n\nArgument 3..."},
+  {id:"bil",title:"✅ Bilan",color:"#2a8a7a",x:1240,y:1190,w:520,h:130,type:"text",content:"Synthèse et conclusion du sous-thème..."},
+  {id:"lnk",title:"🔗 Liens entre thèmes",color:"#6b7890",x:1820,y:1190,w:280,h:130,type:"text",content:"↔ Thème 2\n↔ Thème 3"},
 ];
 
 const CanvasCard = ({ card, sid, onDragStart, onResizeStart, onUpdate, onDelete, isDragging, isResizing }) => {
@@ -678,7 +818,7 @@ const CanvasCard = ({ card, sid, onDragStart, onResizeStart, onUpdate, onDelete,
 
   const active=isDragging||isResizing;
   return (
-    <div style={{ position:"absolute",top:card.y,left:card.x,width:card.w,height:card.h,border:`1px solid ${card.color}55`,borderRadius:12,background:"var(--card-bg)",backdropFilter:"blur(24px) saturate(180%)",WebkitBackdropFilter:"blur(24px) saturate(180%)",boxShadow:active?`0 16px 48px rgba(0,0,0,.45),0 0 0 2px ${card.color}88`:`0 4px 20px rgba(0,0,0,.22),0 1px 0 var(--border)`,zIndex:active?100:1,transition:active?"none":"box-shadow .15s",overflow:"hidden" }}>
+    <div style={{ position:"absolute",top:card.y,left:card.x,width:card.w,height:card.h,border:`1px solid ${card.color}55`,borderRadius:12,background:"rgba(14,16,30,0.90)",backdropFilter:"blur(24px) saturate(180%)",WebkitBackdropFilter:"blur(24px) saturate(180%)",boxShadow:active?`0 16px 48px rgba(0,0,0,.55),0 0 0 2px ${card.color}88,inset 0 1px 0 rgba(255,255,255,0.12)`:`0 4px 20px rgba(0,0,0,.38),inset 0 1px 0 rgba(255,255,255,0.08)`,zIndex:active?100:1,transition:active?"none":"box-shadow .15s",overflow:"hidden" }}>
       <div onPointerDown={onDragStart} style={{ background:`linear-gradient(90deg,${card.color}cc,${card.color}88)`,padding:"5px 8px 5px 10px",display:"flex",alignItems:"center",gap:5,cursor:isDragging?"grabbing":"grab",userSelect:"none",flexShrink:0,touchAction:"none" }}>
         <span style={{ color:"rgba(255,255,255,0.35)",display:"flex" }}>{Ic.grab(10)}</span>
         <span ref={titleRef} contentEditable suppressContentEditableWarning onBlur={e=>onUpdate({title:e.currentTarget.textContent})} onPointerDown={e=>e.stopPropagation()} style={{ flex:1,fontSize:11.5,fontWeight:700,color:"rgba(255,255,255,0.92)",outline:"none",cursor:"text" }} />
@@ -694,7 +834,7 @@ const CanvasCard = ({ card, sid, onDragStart, onResizeStart, onUpdate, onDelete,
             {lightbox&&imgSrc&&<Lightbox src={imgSrc} type="image" onClose={()=>setLightbox(false)} />}
           </>
         ) : (
-          <div ref={contentRef} contentEditable suppressContentEditableWarning onBlur={e=>onUpdate({content:e.currentTarget.textContent})} onPointerDown={e=>e.stopPropagation()} data-ph="Cliquez pour éditer..." style={{ outline:"none",fontSize:12.5,lineHeight:1.7,color:"var(--card-text)",height:"100%",cursor:"text",whiteSpace:"pre-wrap",overflowY:"auto" }} />
+          <div ref={contentRef} contentEditable suppressContentEditableWarning onBlur={e=>onUpdate({content:e.currentTarget.textContent})} onPointerDown={e=>e.stopPropagation()} data-ph="Cliquez pour éditer..." style={{ outline:"none",fontSize:12.5,lineHeight:1.7,color:"rgba(255,255,255,0.80)",height:"100%",cursor:"text",whiteSpace:"pre-wrap",overflowY:"auto" }} />
         )}
       </div>
       <div onPointerDown={e=>{e.stopPropagation();onResizeStart(e);}} style={{ position:"absolute",bottom:0,right:0,width:20,height:20,cursor:"se-resize",display:"flex",alignItems:"flex-end",justifyContent:"flex-end",padding:"4px",touchAction:"none",zIndex:2 }}>
@@ -708,79 +848,111 @@ const CanvasCard = ({ card, sid, onDragStart, onResizeStart, onUpdate, onDelete,
 //  GEMINI AI
 // ════════════════════════════════════════════════════════════════
 const GEMINI_API_KEY = "AQ.Ab8RN6KftwWdoZMMTeurR4B_Vrd8XmnW-ZnZIHxYj8L1CTJKUw";
-const GEMINI_MM_PROMPT = `Tu es un expert en pédagogie visuelle, en design de cartes mentales et en sciences cognitives.
+const GEMINI_MM_PROMPT = `Tu es un expert en pédagogie visuelle et en cartes mentales pour lycéens et étudiants.
+À partir du contenu de cours fourni, crée une carte mentale claire et optimisée pour la mémorisation.
 
-À partir du contenu que je vais fournir, crée une seule carte mentale extrêmement claire, esthétique et optimisée pour la mémorisation d'un élève de lycée préparant un oral de DNL Histoire-Géographie en allemand.
+LANGUE — RÈGLE ABSOLUE :
+Détecte la langue du contenu du cours et réponds STRICTEMENT dans cette langue.
+Cours en français → carte en français. Cours en allemand → carte en allemand.
+Cours en anglais → carte en anglais. N'utilise JAMAIS une autre langue que celle du cours.
 
-OBJECTIF :
-Transformer un cours dense en une carte mentale ultra-visuelle permettant une compréhension immédiate et une mémorisation rapide.
+RÈGLES DE CONTENU :
+- Uniquement mots-clés, dates, acteurs, formules, définitions courtes. Pas de paragraphes.
+- Hiérarchise : l'essentiel d'abord. Fais ressortir causes → conséquences avec des flèches (→).
+- 6 à 8 branches, chacune d'un TYPE différent quand c'est pertinent :
+  "liste"        → points clés à puces
+  "definition"   → notions/concepts définis en une ligne
+  "chronologie"  → dates ou étapes dans l'ordre (une par ligne, format "DATE — événement")
+  "exemple"      → exemples concrets, chiffres, citations courtes
+- Chaque branche a un emoji pertinent et une couleur différente parmi :
+  #3b6ea5 #c96a2a #5b8a3a #8b4a9a #2a8a7a #6b7890 #a04040 #c0983a
 
-RÈGLES ABSOLUES :
-- Toute la carte mentale doit être en allemand.
-- Ne rédige pas de paragraphes.
-- Utilise uniquement des mots-clés, concepts clés, dates importantes, acteurs, lieux et relations essentielles.
-- Réduis chaque idée à son essence.
-- Hiérarchise clairement les informations.
-- Fais apparaître les liens logiques, les causes, les conséquences et les enjeux.
-- Élimine toute information secondaire ou redondante.
-
-STRUCTURE VISUELLE :
-CENTRE : Le thème principal du chapitre. Grand titre central très visible.
-NIVEAU 1 : 6 à 8 branches principales maximum. Une couleur distincte par branche.
-NIVEAU 2 : Sous-thèmes essentiels.
-NIVEAU 3 : Exemples, dates, acteurs, notions importantes.
-
-STYLE VISUEL :
-- Design moderne et professionnel. Aspect "studygram" haut de gamme.
-- Organisation parfaitement équilibrée. Lecture intuitive en moins de 30 secondes.
-- Couleurs cohérentes et contrastées. Flèches montrant les liens de cause à effet.
-- Icônes pertinentes pour chaque notion. Dates mises en évidence.
-- Concepts majeurs encadrés. Hiérarchie visuelle très nette.
-
-MISE EN VALEUR :
-- Les notions indispensables apparaissent en très gros.
-- Les notions importantes en taille moyenne.
-- Les détails en taille plus petite.
-
-AJOUTER :
-✓ frise chronologique miniature si nécessaire
-✓ légende discrète
-✓ connexions transversales entre les branches
-✓ symboles visuels
-✓ pictogrammes mémorisables
-
-OPTIMISATION MÉMOIRE :
-La carte doit respecter : Chunking, Double codage (texte + visuel), Hiérarchisation forte, Réduction de la charge cognitive, Apprentissage rapide avant un oral.
-
-STYLE FINAL : "Carte mentale premium de révision pour obtenir la meilleure note possible à un oral de DNL Histoire-Géographie."
-
-utilise tes recherches
-
----
 IMPORTANT — FORMAT DE RÉPONSE :
-Réponds UNIQUEMENT avec un objet JSON valide (pas de \`\`\`json, pas de markdown, pas de commentaires).
+Réponds UNIQUEMENT avec un objet JSON valide, sans markdown ni commentaires.
 Format strict :
-{
-  "titre": "Thème principal en allemand (2-5 mots)",
-  "branches": [
-    {
-      "titre": "Titre de branche (2-4 mots en allemand)",
-      "contenu": "• Mot-clé 1\\n• Date : événement\\n• Acteur clé\\n→ Conséquence",
-      "couleur": "#3b6ea5"
-    }
-  ]
-}
-Génère exactement 6 à 8 branches. Tout en allemand. Couleurs variées pour chaque branche.`;
+{"titre":"Thème principal (2-5 mots)","branches":[{"titre":"Titre court","emoji":"📌","type":"liste","contenu":"• Point 1\\n• Point 2\\n→ Conséquence","couleur":"#3b6ea5"}]}`;
 
-const BRANCH_LAYOUT=[{x:20,y:180},{x:350,y:180},{x:680,y:180},{x:1010,y:180},{x:20,y:460},{x:350,y:460},{x:680,y:460},{x:1010,y:460}];
+const GEMINI_QUIZ_PROMPT = `Tu es un professeur qui crée des flashcards de révision efficaces pour un élève.
+Génère exactement {COUNT} flashcards (question/réponse) à partir du contenu fourni.
+
+LANGUE — RÈGLE ABSOLUE :
+Détecte la langue du contenu du cours et réponds STRICTEMENT dans cette langue.
+Si une demande spécifique de l'élève est fournie, respecte la langue de sa demande.
+
+RÈGLES :
+- Questions précises et variées : définitions, dates, causes/conséquences, acteurs, chiffres clés.
+- Réponses courtes mais complètes (1 à 3 phrases max).
+- Va du plus important au plus secondaire.
+- Si l'élève a fait une demande spécifique, elle est PRIORITAIRE sur tout le reste.
+
+IMPORTANT — FORMAT DE RÉPONSE :
+Réponds UNIQUEMENT avec un objet JSON valide, sans markdown ni commentaires.
+Format strict :
+{"cartes":[{"question":"…","reponse":"…"}]}`;
+
+// Le canvas fait 3000×2000 → tout part du centre (1500,1000)
+const CANVAS_CX=1500, CANVAS_CY=1000;
+const TYPE_ICONS={ liste:"📌", definition:"📖", chronologie:"📅", exemple:"💡" };
 const buildAICards=(data)=>{
   const ts=Date.now(), cards=[];
-  cards.push({id:`ai_${ts}_c`,title:data.titre||"Hauptthema",color:"#c96a2a",x:20,y:20,w:640,h:120,type:"text",content:"🎯 "+(data.titre||"")});
-  (data.branches||[]).slice(0,8).forEach((b,i)=>{
-    const pos=BRANCH_LAYOUT[i]||{x:20+i*50,y:700}, lines=(b.contenu||"").split("\n").length;
-    cards.push({id:`ai_${ts}_${i}`,title:b.titre||`Zweig ${i+1}`,color:b.couleur||CARD_COLORS[i%CARD_COLORS.length],x:pos.x,y:pos.y,w:300,h:Math.max(190,32+lines*22),type:"text",content:b.contenu||""});
+  // Nœud central au milieu du calque
+  const cw=420, ch=120;
+  cards.push({id:`ai_${ts}_c`,title:"🎯 "+(data.titre||"Thème"),color:"#c96a2a",x:CANVAS_CX-cw/2,y:CANVAS_CY-ch/2,w:cw,h:ch,type:"text",content:"🎯 "+(data.titre||"")});
+  // Branches en cercle autour du centre
+  const branches=(data.branches||[]).slice(0,8), n=Math.max(branches.length,1);
+  const rx=560, ry=420, bw=300;
+  branches.forEach((b,i)=>{
+    const angle=-Math.PI/2+(2*Math.PI*i)/n;
+    const lines=(b.contenu||"").split("\n").length;
+    const bh=Math.max(170,56+lines*22);
+    const emoji=b.emoji||TYPE_ICONS[b.type]||"📌";
+    const titre=b.titre||("Branche "+(i+1));
+    cards.push({
+      id:`ai_${ts}_${i}`,
+      title:emoji+" "+titre,
+      color:b.couleur||CARD_COLORS[i%CARD_COLORS.length],
+      x:CANVAS_CX+rx*Math.cos(angle)-bw/2,
+      y:CANVAS_CY+ry*Math.sin(angle)-bh/2,
+      w:bw,h:bh,type:"text",content:b.contenu||""
+    });
   });
   return cards;
+};
+
+// Appel Gemini générique (mindmap + quiz)
+const callGemini=async(prompt)=>{
+  const MODELS=["gemini-2.5-flash","gemini-2.5-flash-preview-05-20","gemini-2.0-flash"];
+  const DELAYS=[0,3000,6000];
+  let json,res,lastErr="";
+  outer: for(const model of MODELS){
+    for(let attempt=0;attempt<3;attempt++){
+      if(DELAYS[attempt]>0) await new Promise(r=>setTimeout(r,DELAYS[attempt]));
+      res=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_API_KEY}`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({contents:[{parts:[{text:prompt}]}],generationConfig:{temperature:0.65,maxOutputTokens:16384}})});
+      json=await res.json();
+      if(res.ok) break outer;
+      lastErr=json.error?.message||`Erreur HTTP ${res.status}`;
+      const isOverloaded=res.status===503||(lastErr||"").toLowerCase().includes("demand");
+      if(!isOverloaded) break outer;
+    }
+    if(!res.ok) continue; break;
+  }
+  if(!res.ok) throw new Error(lastErr||`Erreur HTTP ${res.status}`);
+  let raw=json.candidates?.[0]?.content?.parts?.[0]?.text||"";
+  if(!raw) throw new Error("Gemini n'a renvoyé aucun texte. Réessaie.");
+  raw=raw.replace(/^```(?:json)?\s*/i,"").replace(/\s*```\s*$/i,"").trim();
+  const jsonStart=raw.indexOf("{"),jsonEnd=raw.lastIndexOf("}");
+  if(jsonStart!==-1&&jsonEnd!==-1) raw=raw.slice(jsonStart,jsonEnd+1);
+  try{return JSON.parse(raw);}catch(e){throw new Error("Réponse JSON invalide de Gemini.\n"+e.message);}
+};
+
+const extractPDFText=async(sid)=>{
+  const pdfData=localStorage.getItem(`${sid}_pdf`);
+  if(!pdfData) return null;
+  await loadPDFJS();
+  const pdfDoc=await window.pdfjsLib.getDocument(pdfData).promise;
+  let pdfText="";
+  for(let p=1;p<=pdfDoc.numPages;p++){const page=await pdfDoc.getPage(p);const tc=await page.getTextContent();pdfText+=tc.items.map(it=>it.str).join(" ")+"\n";}
+  return pdfText.trim().slice(0,60000)||null;
 };
 
 const GeminiModal = ({ sid, onClose, onApply }) => {
@@ -791,38 +963,10 @@ const GeminiModal = ({ sid, onClose, onApply }) => {
     setErrMsg("");
     try {
       setStep("extracting");
-      const pdfData=localStorage.getItem(`${sid}_pdf`);
-      if(!pdfData) throw new Error("Aucun PDF trouvé dans ce dossier.\nCharge ton cours PDF dans l'onglet Dossier puis réessaie.");
-      await loadPDFJS();
-      const pdfDoc=await window.pdfjsLib.getDocument(pdfData).promise;
-      let pdfText="";
-      for(let p=1;p<=pdfDoc.numPages;p++){const page=await pdfDoc.getPage(p);const tc=await page.getTextContent();pdfText+=tc.items.map(it=>it.str).join(" ")+"\n";}
-      pdfText=pdfText.trim().slice(0,60000);
-      if(!pdfText) throw new Error("Le PDF est un scan image — le texte ne peut pas être extrait.");
+      const pdfText=await extractPDFText(sid);
+      if(!pdfText) throw new Error("Aucun PDF avec du texte trouvé dans ce dossier.\nCharge ton cours PDF dans l'onglet Dossier puis réessaie.");
       setStep("calling");
-      const prompt=GEMINI_MM_PROMPT+"\n\n---\nCONTENU DU COURS :\n"+pdfText;
-      const MODELS=["gemini-2.5-flash","gemini-2.5-flash-preview-05-20","gemini-2.0-flash"];
-      const DELAYS=[0,3000,6000];
-      let json,res,lastErr="";
-      outer: for(const model of MODELS){
-        for(let attempt=0;attempt<3;attempt++){
-          if(DELAYS[attempt]>0) await new Promise(r=>setTimeout(r,DELAYS[attempt]));
-          res=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_API_KEY}`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({contents:[{parts:[{text:prompt}]}],generationConfig:{temperature:0.65,maxOutputTokens:16384}})});
-          json=await res.json();
-          if(res.ok) break outer;
-          lastErr=json.error?.message||`Erreur HTTP ${res.status}`;
-          const isOverloaded=res.status===503||(lastErr||"").toLowerCase().includes("demand");
-          if(!isOverloaded) break outer;
-        }
-        if(!res.ok) continue; break;
-      }
-      if(!res.ok) throw new Error(lastErr||`Erreur HTTP ${res.status}`);
-      let raw=json.candidates?.[0]?.content?.parts?.[0]?.text||"";
-      if(!raw) throw new Error("Gemini n'a renvoyé aucun texte. Réessaie.");
-      raw=raw.replace(/^```(?:json)?\s*/i,"").replace(/\s*```\s*$/i,"").trim();
-      const jsonStart=raw.indexOf("{"),jsonEnd=raw.lastIndexOf("}");
-      if(jsonStart!==-1&&jsonEnd!==-1) raw=raw.slice(jsonStart,jsonEnd+1);
-      let data; try{data=JSON.parse(raw);}catch(parseErr){throw new Error("Réponse JSON invalide de Gemini.\n"+parseErr.message);}
+      const data=await callGemini(GEMINI_MM_PROMPT+"\n\n---\nCONTENU DU COURS :\n"+pdfText);
       onApply(buildAICards(data)); onClose();
     } catch(e){ setErrMsg(e.message||"Erreur inconnue"); setStep("error"); }
   };
@@ -833,7 +977,7 @@ const GeminiModal = ({ sid, onClose, onApply }) => {
       <div onClick={e=>e.stopPropagation()} className="anim-fadein" style={{ background:"rgba(14,16,30,0.96)",backdropFilter:"blur(56px) saturate(220%)",WebkitBackdropFilter:"blur(56px) saturate(220%)",border:"1px solid rgba(255,255,255,0.12)",borderRadius:24,width:"100%",maxWidth:440,padding:"26px 28px",boxShadow:"0 32px 80px rgba(0,0,0,0.60),inset 0 1px 0 rgba(255,255,255,0.14)" }}>
         <div style={{ display:"flex",alignItems:"center",gap:14,marginBottom:22 }}>
           <div style={{ width:42,height:42,borderRadius:12,background:"linear-gradient(135deg,#0A84FF 0%,#5856D6 100%)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,boxShadow:"0 4px 16px rgba(10,132,255,0.40)" }}>{Ic.sparkle(20)}</div>
-          <div><div style={{ fontSize:16,fontWeight:700,color:"var(--l1)" }}>Générer avec Gemini</div><div style={{ fontSize:12,color:"var(--l3)",marginTop:2 }}>Carte mentale DNL depuis le PDF du dossier</div></div>
+          <div><div style={{ fontSize:16,fontWeight:700,color:"var(--l1)" }}>Générer avec Gemini</div><div style={{ fontSize:12,color:"var(--l3)",marginTop:2 }}>Carte mentale de ton cours depuis le PDF du dossier</div></div>
           <div style={{ flex:1 }} />
           <button onClick={onClose} style={{ width:30,height:30,borderRadius:"50%",background:"var(--fill)",border:"none",cursor:"pointer",color:"var(--l3)",display:"flex",alignItems:"center",justifyContent:"center" }}>{Ic.close(11)}</button>
         </div>
@@ -865,13 +1009,33 @@ const MindmapCanvas = ({ sid }) => {
     el.addEventListener("wheel",onWheel,{passive:false}); return()=>el.removeEventListener("wheel",onWheel);
   },[]);
 
+  // Au montage : centrer la vue sur le contenu réel (ou le milieu du calque si vide)
+  useEffect(()=>{
+    const el=containerRef.current; if(!el) return;
+    let cx=CANVAS_CX, cy=CANVAS_CY;
+    if(cards.length){
+      const minX=Math.min(...cards.map(c=>c.x)), maxX=Math.max(...cards.map(c=>c.x+c.w));
+      const minY=Math.min(...cards.map(c=>c.y)), maxY=Math.max(...cards.map(c=>c.y+c.h));
+      cx=(minX+maxX)/2; cy=(minY+maxY)/2;
+    }
+    el.scrollLeft=cx*zoomRef.current-el.clientWidth/2;
+    el.scrollTop =cy*zoomRef.current-el.clientHeight/2;
+  },[]);
+
   const persist=(list)=>{try{localStorage.setItem(lsKey,JSON.stringify(list));}catch{}};
   const updateCard=(id,updates)=>setCards(prev=>{const next=prev.map(c=>c.id===id?{...c,...updates}:c);persist(next);return next;});
   const deleteCard=(id)=>setCards(prev=>{const next=prev.filter(c=>c.id!==id);persist(next);return next;});
-  const applyAICards=(newCards)=>{persist(newCards);setCards(newCards);};
+  const applyAICards=(newCards)=>{
+    persist(newCards);setCards(newCards);
+    // Recentrer la vue sur la carte générée
+    const el=containerRef.current;
+    if(el){el.scrollLeft=CANVAS_CX*zoomRef.current-el.clientWidth/2;el.scrollTop=CANVAS_CY*zoomRef.current-el.clientHeight/2;}
+  };
   const addCard=(type)=>{
     const id=`card_${counter.current++}`;
-    const card={id,type,title:type==="image"?"Image / Carte":"Nouveau bloc",color:CARD_COLORS[Math.floor(Math.random()*CARD_COLORS.length)],x:40+Math.random()*280,y:40+Math.random()*80,w:type==="image"?300:340,h:type==="image"?260:220,content:""};
+    const w=type==="image"?300:340, h=type==="image"?260:220;
+    // Nouvelle carte près du centre du calque, léger décalage aléatoire
+    const card={id,type,title:type==="image"?"Image / Carte":"Nouveau bloc",color:CARD_COLORS[Math.floor(Math.random()*CARD_COLORS.length)],x:CANVAS_CX-w/2+(Math.random()*240-120),y:CANVAS_CY-h/2+(Math.random()*180-90),w,h,content:""};
     setCards(prev=>{const next=[...prev,card];persist(next);return next;});
   };
   const startDrag=(e,cardId)=>{
@@ -900,20 +1064,20 @@ const MindmapCanvas = ({ sid }) => {
 
   return (
     <div style={{ display:"flex",flexDirection:"column",flex:1,minHeight:0 }}>
-      <div style={{ height:48,flexShrink:0,background:"var(--surface)",backdropFilter:"blur(32px) saturate(180%)",WebkitBackdropFilter:"blur(32px) saturate(180%)",borderBottom:"1px solid var(--sep)",display:"flex",alignItems:"center",padding:"0 18px",gap:8 }}>
+      <div style={{ height:48,flexShrink:0,background:"rgba(255,255,255,0.06)",backdropFilter:"blur(32px) saturate(180%)",WebkitBackdropFilter:"blur(32px) saturate(180%)",borderBottom:"1px solid var(--sep)",display:"flex",alignItems:"center",padding:"0 18px",gap:8 }}>
         <span style={{ fontSize:12,color:"var(--l4)" }}>Glisser · Ctrl+molette pour zoomer</span>
         <div style={{ flex:1 }} />
         <div style={{ display:"flex",alignItems:"center",gap:3 }}>
-          <button onClick={()=>setZoom(z=>Math.max(0.3,z*0.9))} style={{ width:28,height:28,background:"var(--fill)",color:"var(--l2)",border:"1px solid var(--border)",borderRadius:8,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center" }}>{Ic.zoomOut(12)}</button>
-          <button onClick={()=>setZoom(1)} style={{ padding:"0 8px",height:28,background:"var(--fill)",color:"var(--l2)",border:"1px solid var(--border)",borderRadius:8,cursor:"pointer",fontSize:11,minWidth:46 }}>{Math.round(zoom*100)}%</button>
-          <button onClick={()=>setZoom(z=>Math.min(2,z*1.1))} style={{ width:28,height:28,background:"var(--fill)",color:"var(--l2)",border:"1px solid var(--border)",borderRadius:8,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center" }}>{Ic.zoomIn(12)}</button>
+          <button onClick={()=>setZoom(z=>Math.max(0.3,z*0.9))} style={{ width:28,height:28,background:"rgba(255,255,255,0.08)",color:"var(--l2)",border:"none",borderRadius:8,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center" }}>{Ic.zoomOut(12)}</button>
+          <button onClick={()=>setZoom(1)} style={{ padding:"0 8px",height:28,background:"rgba(255,255,255,0.08)",color:"var(--l2)",border:"none",borderRadius:8,cursor:"pointer",fontSize:11,minWidth:46 }}>{Math.round(zoom*100)}%</button>
+          <button onClick={()=>setZoom(z=>Math.min(2,z*1.1))} style={{ width:28,height:28,background:"rgba(255,255,255,0.08)",color:"var(--l2)",border:"none",borderRadius:8,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center" }}>{Ic.zoomIn(12)}</button>
         </div>
         <div style={{ width:1,height:18,background:"var(--sep)" }} />
-        <button onClick={()=>addCard("image")} style={{ display:"flex",alignItems:"center",gap:6,padding:"6px 12px",background:"var(--fill)",color:"var(--l2)",border:"1px solid var(--sep)",borderRadius:10,cursor:"pointer",fontSize:12 }}>{Ic.image(13)} Image</button>
-        <button onClick={()=>addCard("text")} style={{ display:"flex",alignItems:"center",gap:6,padding:"6px 12px",background:"var(--fill)",color:"var(--l2)",border:"1px solid var(--sep)",borderRadius:10,cursor:"pointer",fontSize:12 }}>{Ic.textBox(13)} Texte</button>
+        <button onClick={()=>addCard("image")} style={{ display:"flex",alignItems:"center",gap:6,padding:"6px 12px",background:"rgba(255,255,255,0.08)",color:"var(--l2)",border:"1px solid var(--sep)",borderRadius:10,cursor:"pointer",fontSize:12 }}>{Ic.image(13)} Image</button>
+        <button onClick={()=>addCard("text")} style={{ display:"flex",alignItems:"center",gap:6,padding:"6px 12px",background:"rgba(255,255,255,0.08)",color:"var(--l2)",border:"1px solid var(--sep)",borderRadius:10,cursor:"pointer",fontSize:12 }}>{Ic.textBox(13)} Texte</button>
         <button onClick={()=>setShowGemini(true)} style={{ display:"flex",alignItems:"center",gap:6,padding:"6px 16px",background:"linear-gradient(135deg,#0A84FF,#5856D6)",color:"#fff",border:"none",borderRadius:10,cursor:"pointer",fontSize:12,fontWeight:600,boxShadow:"0 2px 12px rgba(10,132,255,0.40)" }}>{Ic.sparkle(13)} Générer avec l'IA</button>
       </div>
-      <div ref={containerRef} style={{ flex:1,minHeight:0,overflow:"auto",position:"relative",background:"var(--canvas-bg)",backgroundImage:"radial-gradient(circle, var(--canvas-dot) 1px, transparent 1px)",backgroundSize:`${22*zoom}px ${22*zoom}px`,cursor:dragging?"grabbing":resizing?"se-resize":"default" }}>
+      <div ref={containerRef} style={{ flex:1,minHeight:0,overflow:"auto",position:"relative",background:"rgba(255,255,255,0.03)",backgroundImage:"radial-gradient(circle, rgba(255,255,255,0.11) 1px, transparent 1px)",backgroundSize:`${22*zoom}px ${22*zoom}px`,cursor:dragging?"grabbing":resizing?"se-resize":"default" }}>
         <div style={{ width:3000*zoom,height:2000*zoom,position:"relative" }}>
           <div style={{ width:3000,height:2000,position:"relative",transform:`scale(${zoom})`,transformOrigin:"0 0" }}>
             {cards.map(card=><CanvasCard key={card.id} card={card} sid={sid} onDragStart={e=>startDrag(e,card.id)} onResizeStart={e=>startResize(e,card.id)} onUpdate={u=>updateCard(card.id,u)} onDelete={()=>deleteCard(card.id)} isDragging={dragging?.cardId===card.id} isResizing={resizing?.cardId===card.id} />)}
@@ -933,7 +1097,7 @@ const QUIZ_DEFAULTS=()=>[
   {id:"q2",question:"Quels sont les acteurs clés ?",answer:"Réponse à renseigner.",known:false},
   {id:"q3",question:"Quelles sont les conséquences ?",answer:"Réponse à renseigner.",known:false},
   {id:"q4",question:"Comment définir le concept central ?",answer:"Réponse à renseigner.",known:false},
-  {id:"q5",question:"Quelle est la Leitfrage du sous-thème ?",answer:"Réponse à renseigner.",known:false},
+  {id:"q5",question:"Quelle est la problématique du sous-thème ?",answer:"Réponse à renseigner.",known:false},
 ];
 
 const CardField = ({ storageKey, defaultVal, style, ph }) => {
@@ -942,14 +1106,85 @@ const CardField = ({ storageKey, defaultVal, style, ph }) => {
   return <div ref={ref} contentEditable suppressContentEditableWarning onClick={e=>e.stopPropagation()} onMouseDown={e=>e.stopPropagation()} onBlur={e=>localStorage.setItem(storageKey,e.currentTarget.textContent)} data-ph={ph||"Cliquez pour éditer..."} style={{ outline:"none",cursor:"text",...style }} />;
 };
 
+// ── Modal génération IA des flashcards ────────────────────────────
+const QuizAIModal = ({ sid, onClose, onApply }) => {
+  const [mode,setMode]=useState("auto"), [instruction,setInstruction]=useState("");
+  const [count,setCount]=useState(10), [busy,setBusy]=useState(false), [errMsg,setErrMsg]=useState("");
+  useEffect(()=>{ const fn=e=>{if(e.key==="Escape")onClose();}; document.addEventListener("keydown",fn); document.body.style.overflow="hidden"; return()=>{document.removeEventListener("keydown",fn);document.body.style.overflow="";};},[]);
+
+  const run=async()=>{
+    setErrMsg(""); setBusy(true);
+    try {
+      const pdfText=await extractPDFText(sid).catch(()=>null);
+      if(mode==="auto"&&!pdfText) throw new Error("Aucun PDF avec du texte trouvé dans ce dossier.\nCharge ton cours dans l'onglet Dossier, ou utilise « Demande libre ».");
+      let prompt=GEMINI_QUIZ_PROMPT.replace("{COUNT}",count);
+      if(mode==="custom"&&instruction.trim()) prompt+="\n\nDEMANDE SPÉCIFIQUE DE L'ÉLÈVE (priorité absolue) :\n"+instruction.trim();
+      if(pdfText) prompt+="\n\n---\nCONTENU DU COURS :\n"+pdfText;
+      const data=await callGemini(prompt);
+      const items=(data.cartes||[]).filter(c=>c.question);
+      if(!items.length) throw new Error("Gemini n'a renvoyé aucune carte. Réessaie.");
+      onApply(items); onClose();
+    } catch(e){ setErrMsg(e.message||"Erreur inconnue"); }
+    setBusy(false);
+  };
+
+  const tabBtn=(m,label)=>(
+    <button onClick={()=>setMode(m)} style={{ flex:1,padding:"8px",background:mode===m?"rgba(167,139,250,0.22)":"none",border:"none",cursor:"pointer",fontSize:13,color:mode===m?"#a78bfa":"var(--l3)",fontWeight:mode===m?600:400,borderRadius:50,transition:"all .15s",fontFamily:"inherit" }}>{label}</button>
+  );
+
+  return ReactDOM.createPortal(
+    <div onClick={onClose} style={{ position:"fixed",inset:0,background:"rgba(0,0,0,0.52)",backdropFilter:"blur(24px)",WebkitBackdropFilter:"blur(24px)",zIndex:9000,display:"flex",alignItems:"center",justifyContent:"center",padding:20 }}>
+      <div onClick={e=>e.stopPropagation()} className="anim-fadein" style={{ background:"rgba(14,16,30,0.96)",backdropFilter:"blur(56px) saturate(220%)",WebkitBackdropFilter:"blur(56px) saturate(220%)",border:"1px solid rgba(255,255,255,0.12)",borderRadius:24,width:"100%",maxWidth:440,padding:"26px 28px",boxShadow:"0 32px 80px rgba(0,0,0,0.60),inset 0 1px 0 rgba(255,255,255,0.14)" }}>
+        <div style={{ display:"flex",alignItems:"center",gap:14,marginBottom:20 }}>
+          <div style={{ width:42,height:42,borderRadius:12,background:"linear-gradient(135deg,#a78bfa 0%,#7c5cf0 100%)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,boxShadow:"0 4px 16px rgba(167,139,250,0.40)" }}>{Ic.sparkle(20)}</div>
+          <div><div style={{ fontSize:16,fontWeight:700,color:"var(--l1)" }}>Générer des flashcards</div><div style={{ fontSize:12,color:"var(--l3)",marginTop:2 }}>{mode==="auto"?"Questions/réponses depuis le PDF du dossier":"Décris ce que tu veux réviser"}</div></div>
+          <div style={{ flex:1 }} />
+          <button onClick={onClose} style={{ width:30,height:30,borderRadius:"50%",background:"var(--fill)",border:"none",cursor:"pointer",color:"var(--l3)",display:"flex",alignItems:"center",justifyContent:"center" }}>{Ic.close(11)}</button>
+        </div>
+
+        <div style={{ display:"flex",background:"rgba(255,255,255,0.06)",borderRadius:50,padding:3,gap:2,marginBottom:14 }}>
+          {tabBtn("auto","Depuis le PDF")}
+          {tabBtn("custom","Demande libre")}
+        </div>
+
+        {mode==="custom"&&(
+          <textarea value={instruction} onChange={e=>setInstruction(e.target.value)} placeholder="Ex : 10 questions sur les dates clés du chapitre…" rows={3}
+            style={{ width:"100%",boxSizing:"border-box",padding:"11px 13px",border:"1.5px solid rgba(255,255,255,0.12)",background:"rgba(255,255,255,0.07)",borderRadius:12,fontSize:13,outline:"none",resize:"vertical",marginBottom:14,fontFamily:"inherit" }} />
+        )}
+
+        <div style={{ display:"flex",alignItems:"center",gap:10,marginBottom:16 }}>
+          <span style={{ fontSize:13,color:"var(--l2)" }}>Nombre de cartes :</span>
+          <button onClick={()=>setCount(c=>Math.max(4,c-1))} style={{ width:26,height:26,borderRadius:8,background:"rgba(255,255,255,0.08)",border:"none",color:"var(--l2)",cursor:"pointer" }}>−</button>
+          <span style={{ fontSize:14,fontWeight:700,color:"var(--l1)",minWidth:22,textAlign:"center" }}>{count}</span>
+          <button onClick={()=>setCount(c=>Math.min(25,c+1))} style={{ width:26,height:26,borderRadius:8,background:"rgba(255,255,255,0.08)",border:"none",color:"var(--l2)",cursor:"pointer" }}>+</button>
+        </div>
+
+        {busy && <div style={{ background:"rgba(167,139,250,0.12)",borderRadius:12,padding:"12px 16px",marginBottom:14,display:"flex",alignItems:"center",gap:10,border:"1px solid rgba(167,139,250,0.28)" }}><div style={{ fontSize:14,color:"#a78bfa" }}>⟳</div><div style={{ fontSize:13,color:"#a78bfa",fontWeight:600 }}>Gemini génère tes flashcards…</div></div>}
+        {errMsg && <div style={{ background:"rgba(255,69,58,0.10)",border:"1px solid rgba(255,69,58,0.22)",borderRadius:12,padding:"12px 16px",marginBottom:14,whiteSpace:"pre-line" }}><div style={{ fontSize:12,color:"var(--red)" }}>{errMsg}</div></div>}
+
+        <div style={{ display:"flex",gap:10 }}>
+          <button onClick={onClose} style={{ flex:1,padding:"12px",background:"rgba(255,255,255,0.08)",color:"var(--l2)",border:"1px solid var(--sep)",borderRadius:12,cursor:"pointer",fontSize:14 }}>Annuler</button>
+          <button onClick={run} disabled={busy||(mode==="custom"&&!instruction.trim())} style={{ flex:2,padding:"12px",background:busy||(mode==="custom"&&!instruction.trim())?"rgba(255,255,255,0.07)":"linear-gradient(135deg,#a78bfa,#7c5cf0)",color:busy||(mode==="custom"&&!instruction.trim())?"var(--l4)":"#fff",border:"none",borderRadius:12,cursor:busy?"default":"pointer",fontSize:14,fontWeight:700,boxShadow:busy?"none":"0 4px 18px rgba(167,139,250,0.40)",display:"flex",alignItems:"center",justifyContent:"center",gap:6 }}>{Ic.sparkle(14)} {busy?"Génération…":`Générer ${count} cartes`}</button>
+        </div>
+      </div>
+    </div>, document.body
+  );
+};
+
 const QuizView = ({ sid }) => {
   const lsKey=`${sid}_quiz`, ctr=useRef(100);
   const [cards,setCards]=useState(()=>{ try{const s=localStorage.getItem(lsKey);return s?JSON.parse(s):QUIZ_DEFAULTS();}catch{return QUIZ_DEFAULTS();} });
-  const [idx,setIdx]=useState(0), [flipped,setFlipped]=useState(false);
+  const [idx,setIdx]=useState(0), [flipped,setFlipped]=useState(false), [showAI,setShowAI]=useState(false);
   const save=list=>{try{localStorage.setItem(lsKey,JSON.stringify(list));}catch{}};
   const go=dir=>{setFlipped(false);setTimeout(()=>setIdx(i=>Math.max(0,Math.min(cards.length-1,i+dir))),120);};
   const toggleKnown=()=>{const next=cards.map((c,i)=>i===idx?{...c,known:!c.known}:c);save(next);setCards(next);};
   const addCard=()=>{const id=`q_${ctr.current++}`;const next=[...cards,{id,question:"Nouvelle question ?",answer:"Réponse à renseigner.",known:false}];save(next);setCards(next);setIdx(next.length-1);setFlipped(false);};
+  const applyAI=(items)=>{
+    const ts=Date.now();
+    const newCards=items.map((it,i)=>({id:`qai_${ts}_${i}`,question:it.question,answer:it.reponse||"",known:false}));
+    const next=[...cards,...newCards];
+    save(next);setCards(next);setIdx(cards.length);setFlipped(false);
+  };
   const delCard=()=>{if(cards.length<=1)return;const next=cards.filter((_,i)=>i!==idx);save(next);setCards(next);setIdx(Math.min(idx,next.length-1));setFlipped(false);};
   const shuffle=()=>{const next=[...cards].sort(()=>Math.random()-.5).map(c=>({...c,known:false}));save(next);setCards(next);setIdx(0);setFlipped(false);};
   const cur=cards[Math.min(idx,cards.length-1)];
@@ -958,13 +1193,14 @@ const QuizView = ({ sid }) => {
 
   return (
     <div style={{ flex:1,display:"flex",flexDirection:"column",background:"transparent" }}>
-      <div data-np style={{ height:48,flexShrink:0,background:"var(--surface)",backdropFilter:"blur(32px) saturate(180%)",WebkitBackdropFilter:"blur(32px) saturate(180%)",borderBottom:"1px solid var(--sep)",display:"flex",alignItems:"center",padding:"0 18px",gap:12 }}>
+      <div data-np style={{ height:48,flexShrink:0,background:"rgba(255,255,255,0.06)",backdropFilter:"blur(32px) saturate(180%)",WebkitBackdropFilter:"blur(32px) saturate(180%)",borderBottom:"1px solid var(--sep)",display:"flex",alignItems:"center",padding:"0 18px",gap:12 }}>
         <span style={{ fontSize:13,fontWeight:600,color:"var(--blue)" }}>{knownCnt} / {cards.length} connus</span>
-        <div style={{ width:80,height:4,background:"var(--fill)",borderRadius:2,overflow:"hidden" }}>
+        <div style={{ width:80,height:4,background:"rgba(255,255,255,0.10)",borderRadius:2,overflow:"hidden" }}>
           <div style={{ height:"100%",width:`${pct}%`,background:"var(--blue)",borderRadius:2,transition:"width .4s cubic-bezier(0.34,1.2,0.64,1)" }} />
         </div>
         <div style={{ flex:1 }} />
-        <button onClick={shuffle} style={{ display:"flex",alignItems:"center",gap:6,padding:"6px 12px",background:"var(--fill)",color:"var(--l2)",border:"1px solid var(--sep)",borderRadius:10,cursor:"pointer",fontSize:12 }}>{Ic.shuffle(13)} Mélanger</button>
+        <button onClick={shuffle} style={{ display:"flex",alignItems:"center",gap:6,padding:"6px 12px",background:"rgba(255,255,255,0.08)",color:"var(--l2)",border:"1px solid var(--sep)",borderRadius:10,cursor:"pointer",fontSize:12 }}>{Ic.shuffle(13)} Mélanger</button>
+        <button onClick={()=>setShowAI(true)} style={{ display:"flex",alignItems:"center",gap:6,padding:"6px 14px",background:"linear-gradient(135deg,#a78bfa,#7c5cf0)",color:"#fff",border:"none",borderRadius:10,cursor:"pointer",fontSize:12,fontWeight:600,boxShadow:"0 2px 10px rgba(167,139,250,0.35)" }}>{Ic.sparkle(13)} IA</button>
         <button onClick={addCard} style={{ display:"flex",alignItems:"center",gap:6,padding:"6px 14px",background:"var(--blue)",color:"#fff",border:"none",borderRadius:10,cursor:"pointer",fontSize:12,fontWeight:600,boxShadow:"0 2px 10px rgba(10,132,255,0.35)" }}>{Ic.plus(13)} Carte</button>
       </div>
 
@@ -973,7 +1209,7 @@ const QuizView = ({ sid }) => {
 
         <div onClick={()=>setFlipped(f=>!f)} style={{ width:"100%",maxWidth:640,height:290,perspective:"1400px",cursor:"pointer" }}>
           <div style={{ width:"100%",height:"100%",position:"relative",transformStyle:"preserve-3d",transition:"transform 0.50s cubic-bezier(.4,0,.2,1)",transform:flipped?"rotateY(180deg)":"rotateY(0deg)" }}>
-            <div style={{ position:"absolute",inset:0,backfaceVisibility:"hidden",background:"var(--surface)",backdropFilter:"blur(32px) saturate(180%)",WebkitBackdropFilter:"blur(32px) saturate(180%)",borderRadius:20,border:"1px solid var(--border)",boxShadow:"0 20px 56px rgba(0,0,0,0.28)",display:"flex",flexDirection:"column",padding:"26px 30px" }}>
+            <div style={{ position:"absolute",inset:0,backfaceVisibility:"hidden",background:"rgba(255,255,255,0.09)",backdropFilter:"blur(32px) saturate(180%)",WebkitBackdropFilter:"blur(32px) saturate(180%)",borderRadius:20,border:"1px solid rgba(255,255,255,0.14)",boxShadow:"0 20px 56px rgba(0,0,0,0.46),inset 0 1px 0 rgba(255,255,255,0.18)",display:"flex",flexDirection:"column",padding:"26px 30px" }}>
               <div style={{ fontSize:10,fontWeight:700,color:"var(--l4)",textTransform:"uppercase",letterSpacing:".10em",marginBottom:16 }}>Question</div>
               <CardField storageKey={`${sid}_q_${cur.id}_q`} defaultVal={cur.question} ph="Rédigez votre question..." style={{ flex:1,fontSize:20,fontWeight:600,color:"var(--l1)",lineHeight:1.55 }} />
               <div style={{ fontSize:11,color:"var(--l4)",textAlign:"center",marginTop:14 }}>Appuyer pour révéler</div>
@@ -985,14 +1221,20 @@ const QuizView = ({ sid }) => {
           </div>
         </div>
 
-        <div style={{ display:"flex",alignItems:"center",gap:10 }}>
-          <button onClick={()=>go(-1)} disabled={idx===0} style={{ width:40,height:40,borderRadius:"50%",border:"none",background:idx>0?"var(--fill)":"transparent",cursor:idx>0?"pointer":"default",color:idx>0?"var(--l1)":"var(--l4)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18 }}>←</button>
-          <button onClick={toggleKnown} style={{ padding:"9px 20px",borderRadius:50,cursor:"pointer",fontSize:13,fontWeight:600,border:"none",background:cur.known?"rgba(48,209,88,0.16)":"rgba(255,159,10,0.16)",color:cur.known?"var(--green)":"var(--orange)",boxShadow:cur.known?"0 2px 10px rgba(48,209,88,0.22)":"0 2px 10px rgba(255,159,10,0.22)",display:"flex",alignItems:"center",gap:6 }}>{cur.known?<>{Ic.check(13)} Connu</>:<>✗ À revoir</>}</button>
-          <button onClick={()=>setFlipped(f=>!f)} style={{ padding:"9px 22px",borderRadius:50,background:"var(--blue)",color:"#fff",border:"none",cursor:"pointer",fontSize:13,fontWeight:600,boxShadow:"0 3px 14px rgba(10,132,255,0.40)" }}>Retourner</button>
-          <button onClick={()=>go(1)} disabled={idx===cards.length-1} style={{ width:40,height:40,borderRadius:"50%",border:"none",background:idx<cards.length-1?"var(--fill)":"transparent",cursor:idx<cards.length-1?"pointer":"default",color:idx<cards.length-1?"var(--l1)":"var(--l4)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18 }}>→</button>
-          <button onClick={delCard} disabled={cards.length<=1} style={{ width:36,height:36,borderRadius:"50%",border:"none",background:cards.length>1?"rgba(255,69,58,0.13)":"transparent",cursor:cards.length>1?"pointer":"default",color:cards.length>1?"var(--red)":"var(--l4)",display:"flex",alignItems:"center",justifyContent:"center" }}>{Ic.trash(13)}</button>
+        {/* Boutons sur 2 rangées : le texte n'est plus jamais compressé */}
+        <div style={{ display:"flex",flexDirection:"column",gap:12,width:"100%",maxWidth:480 }}>
+          <div style={{ display:"flex",alignItems:"center",gap:12 }}>
+            <button onClick={()=>go(-1)} disabled={idx===0} style={{ width:44,height:44,flexShrink:0,borderRadius:"50%",border:"none",background:idx>0?"rgba(255,255,255,0.10)":"transparent",cursor:idx>0?"pointer":"default",color:idx>0?"var(--l1)":"var(--l4)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18 }}>←</button>
+            <button onClick={()=>setFlipped(f=>!f)} style={{ flex:1,padding:"12px",borderRadius:50,background:"var(--blue)",color:"#fff",border:"none",cursor:"pointer",fontSize:14,fontWeight:600,boxShadow:"0 3px 14px rgba(10,132,255,0.40)",whiteSpace:"nowrap" }}>Retourner</button>
+            <button onClick={()=>go(1)} disabled={idx===cards.length-1} style={{ width:44,height:44,flexShrink:0,borderRadius:"50%",border:"none",background:idx<cards.length-1?"rgba(255,255,255,0.10)":"transparent",cursor:idx<cards.length-1?"pointer":"default",color:idx<cards.length-1?"var(--l1)":"var(--l4)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18 }}>→</button>
+          </div>
+          <div style={{ display:"flex",alignItems:"center",gap:12 }}>
+            <button onClick={toggleKnown} style={{ flex:1,padding:"11px",borderRadius:50,cursor:"pointer",fontSize:13,fontWeight:600,border:"none",background:cur.known?"rgba(48,209,88,0.16)":"rgba(255,159,10,0.16)",color:cur.known?"var(--green)":"var(--orange)",boxShadow:cur.known?"0 2px 10px rgba(48,209,88,0.22)":"0 2px 10px rgba(255,159,10,0.22)",display:"flex",alignItems:"center",justifyContent:"center",gap:6,whiteSpace:"nowrap" }}>{cur.known?<>{Ic.check(13)} Connu</>:<>✗ À revoir</>}</button>
+            <button onClick={delCard} disabled={cards.length<=1} style={{ width:44,height:44,flexShrink:0,borderRadius:"50%",border:"none",background:cards.length>1?"rgba(255,69,58,0.14)":"transparent",cursor:cards.length>1?"pointer":"default",color:cards.length>1?"var(--red)":"var(--l4)",display:"flex",alignItems:"center",justifyContent:"center" }}>{Ic.trash(13)}</button>
+          </div>
         </div>
       </div>
+      {showAI&&<QuizAIModal sid={sid} onClose={()=>setShowAI(false)} onApply={applyAI} />}
     </div>
   );
 };
@@ -1003,63 +1245,42 @@ const QuizView = ({ sid }) => {
 const ThemeLabel = ({ themeId, defaultTitle, open }) => {
   const ref=useRef(null), lsKey=`theme_${themeId}_titre`;
   useEffect(()=>{ if(!ref.current) return; ref.current.textContent=localStorage.getItem(lsKey)||defaultTitle; },[themeId]);
-  return <span ref={ref} contentEditable suppressContentEditableWarning onClick={e=>e.stopPropagation()} onMouseDown={e=>e.stopPropagation()} onBlur={e=>localStorage.setItem(lsKey,e.currentTarget.textContent)} data-ph="Nom du thème" style={{ flex:1,outline:"none",cursor:"text",color:open?"var(--t1)":"var(--t3)",fontSize:12.5,fontWeight:open?600:500,letterSpacing:"-.01em" }} />;
+  return <span ref={ref} contentEditable suppressContentEditableWarning onClick={e=>e.stopPropagation()} onMouseDown={e=>e.stopPropagation()} onBlur={e=>localStorage.setItem(lsKey,e.currentTarget.textContent)} data-ph="Nom du thème" style={{ flex:1,outline:"none",cursor:"text",color:open?"var(--l1)":"var(--l3)",fontSize:13,fontWeight:open?600:400 }} />;
 };
 
-const ThemeToggle = ({ isDark, onToggle }) => (
-  <button onClick={onToggle} title={isDark?"Passer en mode clair":"Passer en mode sombre"} style={{ width:32,height:32,borderRadius:"50%",background:"var(--surface)",border:"1px solid var(--sep)",cursor:"pointer",color:"var(--t3)",display:"flex",alignItems:"center",justifyContent:"center",transition:"all .2s",flexShrink:0 }} onMouseEnter={e=>{e.currentTarget.style.background="var(--surface2)";e.currentTarget.style.color="var(--t1)";}} onMouseLeave={e=>{e.currentTarget.style.background="var(--surface)";e.currentTarget.style.color="var(--t3)";}}>  
-    {isDark ? Ic.sun(14) : Ic.moon(14)}
-  </button>
-);
-
-const Sidebar = ({ themes, activePath, onSelect, stTitles, onAddTheme, onDeleteTheme, onAddST, onDeleteST, subjectNom, subjectSoustitre, subjectColor, onHome }) => {
+const Sidebar = ({ themes, activePath, onSelect, stTitles, onAddTheme, onDeleteTheme, onAddST, onDeleteST, subjectNom, subjectSoustitre }) => {
   const [expanded,setExpanded]=useState(()=>new Set(themes.length>0?[themes[0].id]:[]));
   useEffect(()=>{ if(activePath[0]) setExpanded(prev=>{const n=new Set(prev);n.add(activePath[0]);return n;}); },[activePath[0]]);
   const toggle=(id)=>setExpanded(prev=>{const n=new Set(prev);n.has(id)?n.delete(id):n.add(id);return n;});
   const totalST=themes.reduce((acc,t)=>acc+t.sousThemes.length,0);
 
   return (
-    <aside data-np style={{ width:220,flexShrink:0,background:"var(--sidebar-bg)",borderRight:"1px solid var(--sidebar-border)",display:"flex",flexDirection:"column",overflowY:"hidden" }}>
-      {/* Logo */}
-      <div style={{ padding:"14px 16px 10px",display:"flex",alignItems:"center",gap:10,flexShrink:0 }}>
-        <Logo size={26}/>
-        <span style={{ fontSize:14,fontWeight:800,color:"var(--t1)",letterSpacing:"-.01em" }}>StudySpace</span>
+    <aside data-np style={{ width:240,flexShrink:0,background:"rgba(10,12,24,0.96)",backdropFilter:"blur(48px) saturate(220%) brightness(1.08)",WebkitBackdropFilter:"blur(48px) saturate(220%) brightness(1.08)",borderRight:"1px solid rgba(255,255,255,0.07)",display:"flex",flexDirection:"column",overflowY:"auto" }}>
+      <div style={{ padding:"18px 18px 14px",borderBottom:"1px solid var(--sep)" }}>
+        <div style={{ fontSize:14,fontWeight:700,color:"var(--l1)" }}>{subjectNom||"Matière"}</div>
+        {subjectSoustitre&&<div style={{ fontSize:11,color:"var(--l4)",marginTop:3 }}>{subjectSoustitre}</div>}
       </div>
-      {/* Home button */}
-      <div style={{ padding:"0 8px 10px",flexShrink:0 }}>
-        <button onClick={onHome} style={{ width:"100%",display:"flex",alignItems:"center",gap:9,padding:"9px 12px",background:"var(--surface)",border:"1px solid var(--sep)",borderRadius:10,cursor:"pointer",color:"var(--t2)",fontSize:13,fontWeight:500,fontFamily:"inherit",transition:"all .15s",textAlign:"left" }} onMouseEnter={e=>{e.currentTarget.style.background="var(--accent-t)";e.currentTarget.style.color="var(--accent)";e.currentTarget.style.borderColor="var(--accent-t)";}} onMouseLeave={e=>{e.currentTarget.style.background="var(--surface)";e.currentTarget.style.color="var(--t2)";e.currentTarget.style.borderColor="var(--sep)";}}>
-          {Ic.home(14)} Accueil
-        </button>
-      </div>
-      <div style={{ height:1,background:"var(--sidebar-border)",margin:"0 14px 10px",flexShrink:0 }} />
-      {/* Subject badge */}
-      <div style={{ padding:"0 16px 10px",flexShrink:0 }}>
-        <div style={{ display:"flex",alignItems:"center",gap:8 }}>
-          <div style={{ width:7,height:7,borderRadius:"50%",background:subjectColor||"var(--accent)",flexShrink:0 }} />
-          <span style={{ fontSize:12,fontWeight:700,color:"var(--t1)" }}>{subjectNom}</span>
-        </div>
-        {subjectSoustitre&&<div style={{ fontSize:11,color:"var(--t4)",marginTop:2,paddingLeft:15 }}>{subjectSoustitre}</div>}
-      </div>
-      <div style={{ height:1,background:"var(--sidebar-border)",margin:"0 14px 4px",flexShrink:0 }} />
-      {/* Themes */}
-      <div style={{ flex:1,overflowY:"auto",paddingTop:4 }}>
+
+      <div style={{ flex:1,paddingTop:6,overflowY:"auto" }}>
         {themes.map(theme=>{
           const open=expanded.has(theme.id);
           return (
             <div key={theme.id}>
-              <div style={{ display:"flex",alignItems:"center",padding:"5px 8px 5px 12px",gap:4 }}>
-                <button onClick={()=>toggle(theme.id)} style={{ background:"none",border:"none",cursor:"pointer",color:"var(--t3)",padding:0,flexShrink:0,display:"flex",alignItems:"center",transition:"transform .18s",transform:open?"rotate(0deg)":"rotate(-90deg)" }}>{Ic.chevDown(11)}</button>
+              <div style={{ display:"flex",alignItems:"center",padding:"7px 10px 7px 14px",gap:5 }}>
+                <button onClick={()=>toggle(theme.id)} style={{ background:"none",border:"none",cursor:"pointer",color:open?"var(--l2)":"var(--l4)",padding:0,flexShrink:0,display:"flex",alignItems:"center",transition:"transform .2s",transform:open?"rotate(0deg)":"rotate(-90deg)" }}>{Ic.chevDown(11)}</button>
                 <ThemeLabel themeId={theme.id} defaultTitle={theme.titre} open={open} />
-                <button onClick={()=>onAddST(theme.id)} style={{ background:"none",border:"none",cursor:"pointer",color:"var(--t4)",padding:"2px 3px",flexShrink:0,display:"flex",transition:"color .15s" }} onMouseEnter={e=>e.currentTarget.style.color="var(--accent)"} onMouseLeave={e=>e.currentTarget.style.color="var(--t4)"}>{Ic.plus(11)}</button>
-                <button onClick={()=>onDeleteTheme(theme.id)} style={{ background:"none",border:"none",cursor:"pointer",color:"transparent",padding:"2px 3px",flexShrink:0,display:"flex",transition:"color .15s" }} onMouseEnter={e=>e.currentTarget.style.color="var(--red)"} onMouseLeave={e=>e.currentTarget.style.color="transparent"}>{Ic.close(9)}</button>
+                <button onClick={()=>onAddST(theme.id)} title="Ajouter un sous-thème" style={{ background:"none",border:"none",cursor:"pointer",color:"var(--l4)",padding:"2px 4px",flexShrink:0,display:"flex",transition:"color .15s" }} onMouseEnter={e=>e.currentTarget.style.color="#60a5fa"} onMouseLeave={e=>e.currentTarget.style.color="var(--l4)"}>{Ic.plus(12)}</button>
+                <button onClick={()=>onDeleteTheme(theme.id)} title="Supprimer" style={{ background:"none",border:"none",cursor:"pointer",color:"transparent",padding:"2px 4px",flexShrink:0,display:"flex",transition:"color .15s" }} onMouseEnter={e=>e.currentTarget.style.color="#f87171"} onMouseLeave={e=>e.currentTarget.style.color="transparent"}>{Ic.close(10)}</button>
               </div>
               {open&&theme.sousThemes.map(st=>{
                 const active=activePath[0]===theme.id&&activePath[1]===st.id;
                 const label=stTitles?.[st.id]||st.titre;
                 return (
-                  <div key={st.id} style={{ display:"flex",alignItems:"stretch",padding:"1px 6px 1px 0" }}>
-                    <button onClick={()=>onSelect(theme.id,st.id)} style={{ flex:1,textAlign:"left",padding:"6px 8px 6px 28px",background:active?"var(--pill-active-bg)":"none",border:"none",cursor:"pointer",borderRadius:active?"9px":0,color:active?"var(--pill-active-color)":"var(--t3)",fontSize:12.5,lineHeight:1.45,transition:"all .13s",margin:active?"0 6px":"0",fontFamily:"inherit",fontWeight:active?600:400 }}>{label}</button>
-                    <button onClick={()=>onDeleteST(theme.id,st.id)} style={{ background:"none",border:"none",cursor:"pointer",color:"transparent",fontSize:12,padding:"0 8px 0 2px",flexShrink:0,display:"flex",alignItems:"center",transition:"color .15s" }} onMouseEnter={e=>e.currentTarget.style.color="var(--red)"} onMouseLeave={e=>e.currentTarget.style.color="transparent"}>{Ic.close(8)}</button>
+                  <div key={st.id} style={{ display:"flex",alignItems:"stretch",padding:"1px 8px 1px 0" }}>
+                    <button onClick={()=>onSelect(theme.id,st.id)} style={{ flex:1,textAlign:"left",padding:"7px 8px 7px 30px",background:active?"rgba(10,132,255,0.18)":"none",border:"none",cursor:"pointer",borderRadius:active?"10px":0,color:active?"var(--l1)":"var(--l3)",fontSize:12.5,lineHeight:1.45,transition:"all .15s" }}>
+                      <span style={{ marginRight:6,opacity:.4 }}>·</span>{label}
+                    </button>
+                    <button onClick={()=>onDeleteST(theme.id,st.id)} title="Supprimer" style={{ background:"none",border:"none",cursor:"pointer",color:"transparent",fontSize:12,padding:"0 10px 0 4px",flexShrink:0,display:"flex",alignItems:"center",transition:"color .15s" }} onMouseEnter={e=>e.currentTarget.style.color="#f87171"} onMouseLeave={e=>e.currentTarget.style.color="transparent"}>{Ic.close(9)}</button>
                   </div>
                 );
               })}
@@ -1067,12 +1288,12 @@ const Sidebar = ({ themes, activePath, onSelect, stTitles, onAddTheme, onDeleteT
           );
         })}
       </div>
-      {/* Footer */}
-      <div style={{ padding:"10px",borderTop:"1px solid var(--sidebar-border)",flexShrink:0 }}>
-        <button onClick={onAddTheme} style={{ width:"100%",padding:"8px 12px",background:"transparent",border:"1px dashed var(--sep)",borderRadius:9,color:"var(--t4)",cursor:"pointer",fontSize:12,fontFamily:"inherit",textAlign:"left",display:"flex",alignItems:"center",gap:6,transition:"all .18s" }} onMouseEnter={e=>{e.currentTarget.style.background="var(--accent-t)";e.currentTarget.style.color="var(--accent)";e.currentTarget.style.borderColor="var(--accent)";}} onMouseLeave={e=>{e.currentTarget.style.background="transparent";e.currentTarget.style.color="var(--t4)";e.currentTarget.style.borderColor="var(--sep)";}}>
-          {Ic.plus(11)} Nouveau thème
+
+      <div style={{ padding:"10px 14px",borderTop:"1px solid var(--sep)",flexShrink:0 }}>
+        <button onClick={onAddTheme} style={{ width:"100%",padding:"8px 12px",background:"rgba(255,255,255,0.06)",border:"1px dashed rgba(255,255,255,0.16)",borderRadius:10,color:"var(--l4)",cursor:"pointer",fontSize:12,fontFamily:"inherit",textAlign:"left",display:"flex",alignItems:"center",gap:6,transition:"all .18s" }} onMouseEnter={e=>{e.currentTarget.style.background="rgba(10,132,255,0.16)";e.currentTarget.style.color="#60a5fa";e.currentTarget.style.borderColor="rgba(10,132,255,0.45)";}} onMouseLeave={e=>{e.currentTarget.style.background="rgba(255,255,255,0.06)";e.currentTarget.style.color="var(--l4)";e.currentTarget.style.borderColor="rgba(255,255,255,0.16)";}}>
+          {Ic.plus(12)} Ajouter un thème
         </button>
-        <div style={{ marginTop:7,fontSize:10,color:"var(--t4)",textAlign:"center" }}>{themes.length} thème{themes.length!==1?"s":""} · {totalST} sous-thème{totalST!==1?"s":""}</div>
+        <div style={{ marginTop:8,fontSize:10,color:"var(--l4)",textAlign:"center" }}>{themes.length} thème{themes.length!==1?"s":""} · {totalST} sous-thème{totalST!==1?"s":""}</div>
       </div>
     </aside>
   );
@@ -1160,7 +1381,7 @@ const SubjectCard = ({ subject, themes, onOpen, onDelete }) => {
   const totalST=(themes||[]).reduce((a,t)=>a+t.sousThemes.length,0);
   return (
     <div onMouseEnter={()=>setHovered(true)} onMouseLeave={()=>setHovered(false)} onClick={onOpen}
-      style={{ position:"relative",borderRadius:18,overflow:"hidden",background:hovered?"var(--surface2)":"var(--surface)",border:`1px solid ${hovered?subject.couleur+"55":"var(--border)"}`,boxShadow:hovered?`0 16px 40px rgba(0,0,0,0.22),0 4px 16px ${subject.couleur}22`:"0 2px 10px rgba(0,0,0,0.08)",cursor:"pointer",transition:"all .28s cubic-bezier(0.34,1.2,0.64,1)",transform:hovered?"translateY(-4px) scale(1.015)":"translateY(0) scale(1)",minHeight:150 }}>
+      style={{ position:"relative",borderRadius:18,overflow:"hidden",background:hovered?"rgba(255,255,255,0.13)":"rgba(255,255,255,0.08)",backdropFilter:"blur(28px) saturate(180%)",WebkitBackdropFilter:"blur(28px) saturate(180%)",border:`1px solid ${hovered?subject.couleur+"66":"rgba(255,255,255,0.12)"}`,boxShadow:hovered?`0 20px 50px rgba(0,0,0,0.42),0 4px 20px ${subject.couleur}30,inset 0 1px 0 rgba(255,255,255,0.20)`:"0 4px 24px rgba(0,0,0,0.26),inset 0 1px 0 rgba(255,255,255,0.10)",cursor:"pointer",transition:"all .30s cubic-bezier(0.34,1.2,0.64,1)",transform:hovered?"translateY(-5px) scale(1.02)":"translateY(0) scale(1)",minHeight:160 }}>
       <div style={{ height:3,background:`linear-gradient(90deg,${subject.couleur},${subject.couleur}80)`,borderRadius:"18px 18px 0 0" }} />
       <div style={{ padding:"16px 18px 20px" }}>
         <div style={{ fontSize:28,marginBottom:12,userSelect:"none" }}>{subject.emoji}</div>
@@ -1183,30 +1404,29 @@ const SubjectCard = ({ subject, themes, onOpen, onDelete }) => {
 // ════════════════════════════════════════════════════════════════
 //  LOBBY
 // ════════════════════════════════════════════════════════════════
-const SubjectLobby = ({ user, subjects, subjectThemes, onOpenSubject, onAddSubject, onDeleteSubject, onOpenAccount, isDark, onToggleTheme }) => {
+const SubjectLobby = ({ user, subjects, subjectThemes, onOpenSubject, onAddSubject, onDeleteSubject, onOpenAccount }) => {
   const [addHover,setAddHover]=useState(false);
   const initial=(user?.email?.[0]||"?").toUpperCase();
   return (
-    <div style={{ height:"100vh",display:"flex",flexDirection:"column",background:"var(--bg)" }}>
-      <header style={{ padding:"0 24px",height:58,background:"var(--header-bg)",backdropFilter:"blur(32px) saturate(180%)",WebkitBackdropFilter:"blur(32px) saturate(180%)",borderBottom:"1px solid var(--header-border)",display:"flex",alignItems:"center",gap:12,flexShrink:0 }}>
-        <div style={{ display:"flex",alignItems:"center",gap:10 }}><Logo size={30}/><div style={{ fontSize:15,fontWeight:800,color:"var(--t1)",letterSpacing:"-.01em" }}>StudySpace</div></div>
+    <div style={{ height:"100vh",display:"flex",flexDirection:"column",background:"transparent" }}>
+      <header style={{ padding:"0 28px",height:60,background:"rgba(10,12,24,0.94)",backdropFilter:"blur(48px) saturate(220%) brightness(1.08)",WebkitBackdropFilter:"blur(48px) saturate(220%) brightness(1.08)",borderBottom:"1px solid rgba(255,255,255,0.07)",display:"flex",alignItems:"center",gap:12,flexShrink:0 }}>
+        <div style={{ display:"flex",alignItems:"center",gap:10 }}><Logo size={32}/><div style={{ fontSize:16,fontWeight:800,color:"#fff",letterSpacing:"-.01em" }}>StudySpace</div></div>
         <div style={{ flex:1 }} />
-        <ThemeToggle isDark={isDark} onToggle={onToggleTheme} />
-        <button onClick={onOpenAccount} style={{ display:"flex",alignItems:"center",gap:8,background:"var(--surface)",border:"1px solid var(--sep)",borderRadius:50,padding:"6px 14px 6px 8px",cursor:"pointer",color:"var(--t1)",transition:"all .2s",fontFamily:"inherit" }} onMouseEnter={e=>e.currentTarget.style.background="var(--surface2)"} onMouseLeave={e=>e.currentTarget.style.background="var(--surface)"}>
-          <div style={{ width:26,height:26,borderRadius:"50%",background:"linear-gradient(135deg,var(--accent),#5856D6)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:700,flexShrink:0,color:"#fff",boxShadow:"0 2px 8px rgba(75,114,232,0.40)" }}>{initial}</div>
-          <span style={{ fontSize:13,maxWidth:120,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",color:"var(--t2)" }}>{user?.email?.split("@")[0]}</span>
+        <button onClick={onOpenAccount} style={{ display:"flex",alignItems:"center",gap:8,background:"rgba(255,255,255,0.08)",border:"1px solid rgba(255,255,255,0.12)",borderRadius:50,padding:"6px 14px 6px 8px",cursor:"pointer",color:"var(--l1)",transition:"all .2s",fontFamily:"inherit",backdropFilter:"blur(12px)",WebkitBackdropFilter:"blur(12px)" }} onMouseEnter={e=>e.currentTarget.style.background="rgba(255,255,255,0.14)"} onMouseLeave={e=>e.currentTarget.style.background="rgba(255,255,255,0.08)"}>
+          <div style={{ width:28,height:28,borderRadius:"50%",background:"linear-gradient(135deg,#0A84FF,#5856D6)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,fontWeight:700,flexShrink:0,color:"#fff",boxShadow:"0 2px 8px rgba(10,132,255,0.40)" }}>{initial}</div>
+          <span style={{ fontSize:13,maxWidth:120,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",color:"var(--l2)" }}>{user?.email?.split("@")[0]}</span>
         </button>
       </header>
-      <div style={{ flex:1,padding:"32px 24px",overflowY:"auto" }}>
-        <div style={{ marginBottom:26 }}>
-          <div style={{ fontSize:20,fontWeight:800,color:"var(--t1)",marginBottom:4,letterSpacing:"-.01em" }}>Mes matières</div>
-          <div style={{ fontSize:13,color:"var(--t3)" }}>Sélectionne une matière pour commencer à réviser.</div>
+      <div style={{ flex:1,padding:"36px 28px",overflowY:"auto" }}>
+        <div style={{ marginBottom:28 }}>
+          <div style={{ fontSize:22,fontWeight:800,color:"var(--l1)",marginBottom:5,letterSpacing:"-.01em" }}>Mes matières</div>
+          <div style={{ fontSize:14,color:"var(--l3)" }}>Sélectionne une matière pour commencer à réviser.</div>
         </div>
-        <div style={{ display:"grid",gridTemplateColumns:"repeat(auto-fill, minmax(190px, 1fr))",gap:12 }}>
+        <div style={{ display:"grid",gridTemplateColumns:"repeat(auto-fill, minmax(200px, 1fr))",gap:14 }}>
           {subjects.map(subj=><SubjectCard key={subj.id} subject={subj} themes={subjectThemes[subj.id]||[]} onOpen={()=>onOpenSubject(subj.id)} onDelete={subj.id!=="subj_dnl"?()=>onDeleteSubject(subj.id):null} />)}
-          <div onClick={onAddSubject} onMouseEnter={()=>setAddHover(true)} onMouseLeave={()=>setAddHover(false)} style={{ borderRadius:16,border:`1.5px dashed ${addHover?"var(--accent)":"var(--sep)"}`,background:addHover?"var(--accent-t)":"var(--surface)",cursor:"pointer",minHeight:150,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:9,color:addHover?"var(--accent)":"var(--t4)",transition:"all .22s",transform:addHover?"translateY(-3px)":"translateY(0)" }}>
-            <div style={{ width:38,height:38,borderRadius:"50%",background:addHover?"var(--accent)":"var(--surface2)",display:"flex",alignItems:"center",justifyContent:"center",color:addHover?"#fff":"var(--t4)",transition:"all .2s" }}>{Ic.plus(17)}</div>
-            <div style={{ fontSize:12.5,fontWeight:600 }}>Ajouter une matière</div>
+          <div onClick={onAddSubject} onMouseEnter={()=>setAddHover(true)} onMouseLeave={()=>setAddHover(false)} style={{ borderRadius:18,border:`1.5px dashed ${addHover?"var(--blue)":"rgba(255,255,255,0.18)"}`,background:addHover?"rgba(10,132,255,0.10)":"rgba(255,255,255,0.04)",backdropFilter:"blur(16px)",WebkitBackdropFilter:"blur(16px)",cursor:"pointer",minHeight:160,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:10,color:addHover?"var(--blue)":"var(--l4)",transition:"all .25s",transform:addHover?"translateY(-3px)":"translateY(0)" }}>
+            <div style={{ width:40,height:40,borderRadius:"50%",background:addHover?"var(--blue)":"rgba(255,255,255,0.08)",display:"flex",alignItems:"center",justifyContent:"center",color:addHover?"#fff":"var(--l4)",transition:"all .2s" }}>{Ic.plus(18)}</div>
+            <div style={{ fontSize:13,fontWeight:600 }}>Ajouter une matière</div>
           </div>
         </div>
       </div>
@@ -1303,7 +1523,7 @@ const AddSubjectModal = ({ onClose, onAdd }) => {
 // ════════════════════════════════════════════════════════════════
 //  SUBJECT APP
 // ════════════════════════════════════════════════════════════════
-const SubjectApp = ({ subject, user, onBack, onOpenAccount, isDark, onToggleTheme }) => {
+const SubjectApp = ({ subject, user, onBack, onOpenAccount }) => {
   const { isMobile } = useViewport();
   const [sidebarOpen,setSidebarOpen]=useState(true);
   const themesKey=`subj_${subject.id}_themes`;
@@ -1329,22 +1549,23 @@ const SubjectApp = ({ subject, user, onBack, onOpenAccount, isDark, onToggleThem
     <div style={{ height:"100vh",display:"flex",fontFamily:"-apple-system,'SF Pro Display','SF Pro Text','Helvetica Neue',Inter,sans-serif",color:"var(--l1)" }}>
       {isMobile&&sidebarOpen&&<div onClick={()=>setSidebarOpen(false)} style={{ position:"fixed",inset:0,background:"rgba(0,0,0,.55)",zIndex:50 }} />}
       <div style={isMobile?{position:"fixed",top:0,left:0,bottom:0,zIndex:60,transform:sidebarOpen?"translateX(0)":"translateX(-100%)",transition:"transform .25s ease"}:{width:sidebarOpen?240:0,flexShrink:0,overflow:"hidden",transition:"width .25s ease"}}>
-        <Sidebar themes={themes} activePath={activePath} onSelect={(tId,stId)=>{setActivePath([tId,stId]);if(isMobile)setSidebarOpen(false);}} stTitles={stTitles} onAddTheme={addTheme} onDeleteTheme={deleteTheme} onAddST={addST} onDeleteST={deleteST} subjectNom={subject.nom} subjectSoustitre={subject.soustitre} subjectColor={subject.couleur} onHome={onBack} />
+        <Sidebar themes={themes} activePath={activePath} onSelect={(tId,stId)=>{setActivePath([tId,stId]);if(isMobile)setSidebarOpen(false);}} stTitles={stTitles} onAddTheme={addTheme} onDeleteTheme={deleteTheme} onAddST={addST} onDeleteST={deleteST} subjectNom={subject.nom} subjectSoustitre={subject.soustitre} />
       </div>
 
       <div style={{ flex:1,display:"flex",flexDirection:"column",overflow:"hidden",minWidth:0 }}>
-        <header data-np style={{ height:50,flexShrink:0,background:"var(--header-bg)",backdropFilter:"blur(32px) saturate(180%)",WebkitBackdropFilter:"blur(32px) saturate(180%)",borderBottom:"1px solid var(--header-border)",display:"flex",alignItems:"center",padding:"0 10px",gap:6 }}>
-          <button onClick={()=>setSidebarOpen(o=>!o)} style={{ width:34,height:34,borderRadius:9,background:"transparent",border:"none",cursor:"pointer",color:"var(--t3)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,transition:"background .15s,color .15s" }} onMouseEnter={e=>{e.currentTarget.style.background="var(--fill)";e.currentTarget.style.color="var(--t1)";}} onMouseLeave={e=>{e.currentTarget.style.background="transparent";e.currentTarget.style.color="var(--t3)";}}>{Ic.menu(17)}</button>
-          <div style={{ display:"flex",alignItems:"center",gap:7,padding:"4px 11px 4px 8px",background:"var(--fill)",borderRadius:10,border:"1px solid var(--border)",flexShrink:0,maxWidth:isMobile?130:280,overflow:"hidden" }}>
-            <div style={{ width:8,height:8,borderRadius:"50%",background:subject.couleur,flexShrink:0,boxShadow:`0 0 0 2px ${subject.couleur}28` }} />
-            <span style={{ fontSize:12.5,fontWeight:700,color:"var(--t1)",letterSpacing:"-.01em",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis" }}>{subject.nom}</span>
-            {!isMobile&&subject.soustitre&&<><div style={{ width:1,height:11,background:"var(--sep)",flexShrink:0 }} /><span style={{ fontSize:11,color:"var(--t3)",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",maxWidth:90 }}>{subject.soustitre}</span></>}
-          </div>
+        <header data-np style={{ height:50,flexShrink:0,background:"rgba(255,255,255,0.06)",backdropFilter:"blur(32px) saturate(180%)",WebkitBackdropFilter:"blur(32px) saturate(180%)",borderBottom:"1px solid var(--sep)",display:"flex",alignItems:"center",padding:"0 14px",gap:8 }}>
+          <button onClick={()=>setSidebarOpen(o=>!o)} style={{ background:"none",border:"none",cursor:"pointer",color:"var(--l3)",padding:"4px 5px",display:"flex",alignItems:"center",flexShrink:0 }}>{Ic.menu(18)}</button>
+          <button onClick={onBack} style={{ display:"flex",alignItems:"center",gap:4,background:"none",border:"none",cursor:"pointer",color:"var(--l3)",fontSize:13,padding:"5px 8px",borderRadius:8,transition:"all .15s",fontFamily:"inherit" }} onMouseEnter={e=>{e.currentTarget.style.background="rgba(255,255,255,0.08)";e.currentTarget.style.color="var(--l1)";}} onMouseLeave={e=>{e.currentTarget.style.background="none";e.currentTarget.style.color="var(--l3)";}}>
+            {Ic.back(14)} Lobby
+          </button>
+          <div style={{ width:1,height:16,background:"var(--sep)" }} />
+          <div style={{ width:8,height:8,borderRadius:"50%",background:subject.couleur,flexShrink:0 }} />
+          <span style={{ fontSize:14,fontWeight:700,color:"var(--l1)" }}>{subject.nom}</span>
+          {!isMobile&&subject.soustitre&&<><div style={{ width:1,height:16,background:"var(--sep)" }} /><span style={{ fontSize:12,color:"var(--l3)" }}>{subject.soustitre}</span></>}
           <div style={{ flex:1 }} />
-          {!isMobile&&allSTs.length>0&&<div style={{ padding:"3px 10px",background:"var(--fill)",border:"1px solid var(--border)",borderRadius:50,flexShrink:0 }}><span style={{ fontSize:10.5,color:"var(--t4)",fontVariantNumeric:"tabular-nums" }}>{currentIdx+1} / {allSTs.length}</span></div>}
-          <button onClick={()=>window.print()} style={{ display:"flex",alignItems:"center",gap:5,padding:"5px 11px",background:"var(--surface)",color:"var(--t3)",border:"1px solid var(--border)",borderRadius:9,cursor:"pointer",fontSize:12,flexShrink:0,transition:"all .15s" }} onMouseEnter={e=>{e.currentTarget.style.background="var(--surface2)";e.currentTarget.style.color="var(--t1)";}} onMouseLeave={e=>{e.currentTarget.style.background="var(--surface)";e.currentTarget.style.color="var(--t3)";}}>{Ic.print(13)}{!isMobile&&" PDF"}</button>
-          <ThemeToggle isDark={isDark} onToggle={onToggleTheme} />
-          <button onClick={onOpenAccount} style={{ width:32,height:32,borderRadius:"50%",background:"linear-gradient(135deg,var(--accent),#5856D6)",border:"none",display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontSize:11,fontWeight:700,cursor:"pointer",flexShrink:0,boxShadow:"0 2px 8px rgba(75,114,232,0.35)",transition:"transform .15s,box-shadow .15s" }} onMouseEnter={e=>{e.currentTarget.style.transform="scale(1.07)";e.currentTarget.style.boxShadow="0 4px 14px rgba(75,114,232,0.50)";}} onMouseLeave={e=>{e.currentTarget.style.transform="scale(1)";e.currentTarget.style.boxShadow="0 2px 8px rgba(75,114,232,0.35)";}}>{(user?.email?.[0]||"?").toUpperCase()}</button>
+          {!isMobile&&allSTs.length>0&&<span style={{ fontSize:11,color:"var(--l4)" }}>{currentIdx+1} / {allSTs.length}</span>}
+          <button onClick={()=>window.print()} style={{ display:"flex",alignItems:"center",gap:5,padding:"5px 11px",background:"rgba(255,255,255,0.07)",color:"var(--l3)",border:"1px solid var(--sep)",borderRadius:9,cursor:"pointer",fontSize:12 }}>{Ic.print(14)} PDF</button>
+          <button onClick={onOpenAccount} style={{ width:30,height:30,borderRadius:"50%",background:"linear-gradient(135deg,#0A84FF,#5856D6)",border:"none",display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontSize:11,fontWeight:700,cursor:"pointer",flexShrink:0,boxShadow:"0 2px 8px rgba(10,132,255,0.40)" }}>{(user?.email?.[0]||"?").toUpperCase()}</button>
         </header>
 
         <div style={{ flex:1,display:"flex",overflow:"hidden" }}>
@@ -1352,20 +1573,20 @@ const SubjectApp = ({ subject, user, onBack, onOpenAccount, isDark, onToggleThem
             {allSTs.length===0 ? (
               <div style={{ flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:14,color:"var(--l3)",padding:40,textAlign:"center" }}>
                 <div style={{ color:"var(--l4)" }}>{Ic.pdf(44)}</div>
-                <div style={{ fontSize:16,fontWeight:700,color:"var(--t2)" }}>Aucun contenu</div>
-                <div style={{ fontSize:14,maxWidth:280,lineHeight:1.6,color:"var(--t3)" }}>Ajoute un thème depuis le menu latéral, puis des sous-thèmes pour commencer.</div>
+                <div style={{ fontSize:16,fontWeight:700,color:"var(--l2)" }}>Aucun contenu</div>
+                <div style={{ fontSize:14,maxWidth:280,lineHeight:1.6,color:"var(--l3)" }}>Ajoute un thème depuis le menu latéral, puis des sous-thèmes pour commencer.</div>
               </div>
             ) : (
               <>
-                <div style={{ background:"var(--header-bg)",backdropFilter:"blur(18px)",WebkitBackdropFilter:"blur(18px)",borderBottom:"1px solid var(--sep)",padding:"0 20px",flexShrink:0,display:"flex",alignItems:"center",gap:12,height:44 }}>
-                  <div style={{ flex:1,fontSize:11,color:"var(--l4)",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",minWidth:0 }}>
-                    <span style={{ color:"var(--t3)",fontWeight:500 }}>{activeTheme&&(localStorage.getItem(`theme_${activeTheme.id}_titre`)||activeTheme.titre)}</span>
-                    <span style={{ opacity:.45,margin:"0 5px",fontSize:10 }}>›</span>
-                    <span style={{ color:"var(--accent)",fontWeight:600 }}>{stTitles[activeST?.id]||activeST?.titre}</span>
+                <div style={{ background:"rgba(255,255,255,0.05)",backdropFilter:"blur(18px) saturate(160%)",WebkitBackdropFilter:"blur(18px) saturate(160%)",borderBottom:"1px solid var(--sep)",padding:"10px 22px 0",flexShrink:0 }}>
+                  <div style={{ fontSize:11,color:"var(--l4)",marginBottom:8 }}>
+                    {activeTheme&&(localStorage.getItem(`theme_${activeTheme.id}_titre`)||activeTheme.titre)}
+                    {" "}&rsaquo;{" "}
+                    <span style={{ color:"var(--blue)" }}>{stTitles[activeST?.id]||activeST?.titre}</span>
                   </div>
-                  <div data-np style={{ display:"inline-flex",background:"var(--fill)",borderRadius:50,padding:"3px",gap:2,flexShrink:0 }}>
+                  <div data-np style={{ display:"inline-flex",background:"rgba(255,255,255,0.06)",borderRadius:50,padding:"3px",gap:2 }}>
                     {TABS.map(t=>(
-                      <button key={t} onClick={()=>setTab(t)} style={{ padding:isMobile?"7px 14px":"5px 16px",background:tab===t?"var(--pill-active-bg)":"transparent",border:"none",cursor:"pointer",fontSize:12.5,color:tab===t?"var(--pill-active-color)":"var(--t3)",fontWeight:tab===t?600:400,borderRadius:50,transition:"all .18s cubic-bezier(0.34,1.2,0.64,1)",fontFamily:"inherit" }}>
+                      <button key={t} onClick={()=>setTab(t)} style={{ padding:isMobile?"8px 16px":"6px 16px",background:tab===t?"rgba(10,132,255,0.22)":"none",border:"none",cursor:"pointer",fontSize:13,color:tab===t?"#0A84FF":"var(--l3)",fontWeight:tab===t?600:400,borderRadius:50,transition:"all .15s",fontFamily:"inherit" }}>
                         {TAB_LABELS[t]}
                       </button>
                     ))}
@@ -1378,13 +1599,10 @@ const SubjectApp = ({ subject, user, onBack, onOpenAccount, isDark, onToggleThem
                   {tab==="quiz"&&activeST&&<QuizView key={activeST.id} sid={activeST.id} />}
                 </div>
 
-                <div data-np style={{ height:52,flexShrink:0,background:"var(--header-bg)",backdropFilter:"blur(18px)",WebkitBackdropFilter:"blur(18px)",borderTop:"1px solid var(--sep)",display:"flex",alignItems:"center",padding:"0 14px",gap:10 }}>
-                  <button onClick={()=>goTo(currentIdx-1)} disabled={currentIdx<=0} style={{ display:"flex",alignItems:"center",gap:5,padding:"7px 16px",borderRadius:50,border:`1px solid ${currentIdx>0?"var(--border)":"transparent"}`,background:currentIdx>0?"var(--surface)":"transparent",color:currentIdx>0?"var(--t2)":"var(--t4)",cursor:currentIdx>0?"pointer":"default",fontSize:12.5,fontWeight:500,flexShrink:0,transition:"all .15s" }}>← {!isMobile&&"Précédent"}</button>
-                  <div style={{ flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:5 }}>
-                    <div style={{ width:"100%",maxWidth:160,height:3,background:"var(--fill)",borderRadius:3,overflow:"hidden" }}><div style={{ height:"100%",width:`${allSTs.length>0?((currentIdx+1)/allSTs.length)*100:0}%`,background:"var(--accent)",borderRadius:3,transition:"width .35s cubic-bezier(0.34,1.2,0.64,1)" }} /></div>
-                    <span style={{ fontSize:10,color:"var(--t4)",fontVariantNumeric:"tabular-nums",letterSpacing:".02em" }}>{currentIdx+1} / {allSTs.length}</span>
-                  </div>
-                  <button onClick={()=>goTo(currentIdx+1)} disabled={currentIdx>=allSTs.length-1} style={{ display:"flex",alignItems:"center",gap:5,padding:"7px 18px",borderRadius:50,border:"none",background:currentIdx<allSTs.length-1?"var(--accent)":"transparent",color:currentIdx<allSTs.length-1?"#fff":"var(--t4)",cursor:currentIdx<allSTs.length-1?"pointer":"default",fontSize:12.5,fontWeight:600,boxShadow:currentIdx<allSTs.length-1?"0 2px 12px rgba(75,114,232,0.40)":"none",flexShrink:0,transition:"all .15s" }}>{!isMobile&&"Suivant"} →</button>
+                <div data-np style={{ height:52,flexShrink:0,background:"rgba(255,255,255,0.06)",backdropFilter:"blur(18px) saturate(160%)",WebkitBackdropFilter:"blur(18px) saturate(160%)",borderTop:"1px solid var(--sep)",display:"flex",alignItems:"center",justifyContent:"space-between",padding:"0 22px" }}>
+                  <button onClick={()=>goTo(currentIdx-1)} disabled={currentIdx<=0} style={{ padding:"7px 18px",borderRadius:50,border:"none",background:currentIdx>0?"rgba(255,255,255,0.09)":"transparent",color:currentIdx>0?"var(--l2)":"var(--l4)",cursor:currentIdx>0?"pointer":"default",fontSize:13,fontWeight:500 }}>← Précédent</button>
+                  <span style={{ fontSize:12,color:"var(--l4)" }}>{currentIdx+1} / {allSTs.length}</span>
+                  <button onClick={()=>goTo(currentIdx+1)} disabled={currentIdx>=allSTs.length-1} style={{ padding:"7px 20px",borderRadius:50,border:"none",background:currentIdx<allSTs.length-1?"var(--blue)":"transparent",color:currentIdx<allSTs.length-1?"#fff":"var(--l4)",cursor:currentIdx<allSTs.length-1?"pointer":"default",fontSize:13,fontWeight:600,boxShadow:currentIdx<allSTs.length-1?"0 2px 12px rgba(10,132,255,0.40)":"none" }}>Suivant →</button>
                 </div>
               </>
             )}
@@ -1402,9 +1620,6 @@ const App = () => {
   const [user,setUser]=useState(null), [authReady,setAuthReady]=useState(false), [syncing,setSyncing]=useState(false);
   const [screen,setScreen]=useState("lobby"), [activeSubjectId,setActiveSubjectId]=useState(null);
   const [showAccount,setShowAccount]=useState(false), [showAddSubject,setShowAddSubject]=useState(false);
-  const [isDark,setIsDark]=useState(()=>localStorage.getItem("ss_theme")==="light"?false:true);
-  useEffect(()=>{ document.documentElement.setAttribute("data-theme",isDark?"dark":"light"); localStorage.setItem("ss_theme",isDark?"dark":"light"); },[isDark]);
-  const toggleTheme=()=>setIsDark(d=>!d);
   const SUBJECTS_KEY="app_subjects";
   const [subjects,setSubjects]=useState(()=>{ try{const s=localStorage.getItem(SUBJECTS_KEY);return s?JSON.parse(s):DEFAULT_SUBJECTS;}catch{return DEFAULT_SUBJECTS;} });
   const saveSubjects=(s)=>{ setSubjects(s); localStorage.setItem(SUBJECTS_KEY,JSON.stringify(s)); };
@@ -1430,9 +1645,9 @@ const App = () => {
     return()=>subscription.unsubscribe();
   },[]);
 
-  if(!authReady) return <div style={{ height:"100vh",display:"flex",alignItems:"center",justifyContent:"center",color:"var(--t3)",fontSize:15,background:"var(--bg)" }}>Chargement…</div>;
+  if(!authReady) return <div style={{ height:"100vh",display:"flex",alignItems:"center",justifyContent:"center",color:"var(--l3)",fontSize:15 }}>Chargement…</div>;
   if(!user) return <LoginScreen />;
-  if(syncing) return <div style={{ height:"100vh",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:14,color:"var(--t3)",background:"var(--bg)" }}><div style={{ fontSize:32,animation:"blob1 1.5s linear infinite",color:"var(--blue)" }}>⟳</div><div style={{ fontSize:14 }}>Synchronisation…</div></div>;
+  if(syncing) return <div style={{ height:"100vh",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:14,color:"var(--l3)" }}><div style={{ fontSize:32,animation:"blob1 1.5s linear infinite",color:"var(--blue)" }}>⟳</div><div style={{ fontSize:14 }}>Synchronisation…</div></div>;
 
   const addSubject=({nom,soustitre,couleur,emoji})=>{ const id=`subj_${Date.now()}`; const newSubj={id,nom,soustitre,couleur,emoji}; const next=[...subjects,newSubj]; saveSubjects(next); localStorage.setItem(`subj_${id}_themes`,JSON.stringify([])); setSubjectThemes(prev=>({...prev,[id]:[]})); };
   const deleteSubject=(id)=>{ if(!confirm("Supprimer cette matière et tout son contenu ?")) return; const next=subjects.filter(s=>s.id!==id); saveSubjects(next); setSubjectThemes(prev=>{const n={...prev};delete n[id];return n;}); };
@@ -1442,8 +1657,8 @@ const App = () => {
 
   return (
     <>
-      {screen==="lobby"&&<SubjectLobby user={user} subjects={subjects} subjectThemes={subjectThemes} onOpenSubject={handleOpenSubject} onAddSubject={()=>setShowAddSubject(true)} onDeleteSubject={deleteSubject} onOpenAccount={()=>setShowAccount(true)} isDark={isDark} onToggleTheme={toggleTheme} />}
-      {screen==="subject"&&activeSubject&&<SubjectApp key={activeSubjectId} subject={activeSubject} user={user} onBack={handleBack} onOpenAccount={()=>setShowAccount(true)} isDark={isDark} onToggleTheme={toggleTheme} />}
+      {screen==="lobby"&&<SubjectLobby user={user} subjects={subjects} subjectThemes={subjectThemes} onOpenSubject={handleOpenSubject} onAddSubject={()=>setShowAddSubject(true)} onDeleteSubject={deleteSubject} onOpenAccount={()=>setShowAccount(true)} />}
+      {screen==="subject"&&activeSubject&&<SubjectApp key={activeSubjectId} subject={activeSubject} user={user} onBack={handleBack} onOpenAccount={()=>setShowAccount(true)} />}
       {showAccount&&<AccountModal user={user} onClose={()=>setShowAccount(false)} />}
       {showAddSubject&&<AddSubjectModal onClose={()=>setShowAddSubject(false)} onAdd={addSubject} />}
     </>
