@@ -260,6 +260,10 @@ const loadUserData = async (uid) => {
   (content.data||[]).forEach(r => { try { _origSet(r.key, r.value); } catch {} });
   (images.data||[]).forEach(r => { try { _origSet("img_"+r.key, r.data); } catch {} });
 
+  // Mémoriser les matières "legacy" (ancien format) avant écrasement
+  let legacySubjects = [];
+  try { legacySubjects = JSON.parse(localStorage.getItem("app_subjects") || "[]"); } catch {}
+
   // 2) Tables structurées (prioritaires : elles écrasent l'ancien format)
   const subjList = subjects.data || [];
   if (subjList.length) {
@@ -299,6 +303,31 @@ const loadUserData = async (uid) => {
       }));
       _origSet(`${stid}_canvas_state`, JSON.stringify(local));
     });
+
+    // 2bis) Fusion : matières legacy absentes des tables structurées
+    //       (ex : créées avec l'ancienne version du site) → on les
+    //       réintègre et on les pousse vers le nouveau format.
+    const structuredIds = new Set(subjList.map(s => s.id));
+    const missing = legacySubjects.filter(s => s && s.id && !structuredIds.has(s.id));
+    if (missing.length) {
+      const merged = subjList.map(s => ({ id:s.id, nom:s.nom, soustitre:s.soustitre, couleur:s.couleur, emoji:s.emoji })).concat(missing);
+      _origSet("app_subjects", JSON.stringify(merged));
+      _pushSubjects(JSON.stringify(merged));
+      missing.forEach(s => {
+        const tk = `subj_${s.id}_themes`;
+        const tRaw = localStorage.getItem(tk);
+        if (!tRaw) return;
+        _pushThemes(s.id, tRaw);
+        try {
+          JSON.parse(tRaw).forEach(t => (t.sousThemes||[]).forEach(st => {
+            const q = localStorage.getItem(`${st.id}_quiz`);
+            if (q) _pushQuiz(st.id, q);
+            const cv = localStorage.getItem(`${st.id}_canvas_state`);
+            if (cv) _pushCanvas(st.id, cv);
+          }));
+        } catch {}
+      });
+    }
   } else {
     // 3) Migration : serveur structuré vide mais anciennes données présentes
     const subjRaw = localStorage.getItem("app_subjects");
@@ -1003,9 +1032,23 @@ const MindmapCanvas = ({ sid }) => {
   useEffect(()=>{zoomRef.current=zoom;},[zoom]);
   const containerRef=useRef(null), [showGemini,setShowGemini]=useState(false);
 
+  // Zoom ancré au centre de la vue : le point au milieu de l'écran reste fixe
+  const zoomAt=(next)=>{
+    const el=containerRef.current;
+    setZoom(z=>{
+      const nz=Math.max(0.3,Math.min(2,typeof next==="function"?next(z):next));
+      if(el&&nz!==z){
+        const cx=(el.scrollLeft+el.clientWidth/2)/z, cy=(el.scrollTop+el.clientHeight/2)/z;
+        requestAnimationFrame(()=>{ el.scrollLeft=cx*nz-el.clientWidth/2; el.scrollTop=cy*nz-el.clientHeight/2; });
+      }
+      return nz;
+    });
+  };
+  const zoomAtRef=useRef(zoomAt); zoomAtRef.current=zoomAt;
+
   useEffect(()=>{
     const el=containerRef.current; if(!el) return;
-    const onWheel=(e)=>{if(e.ctrlKey||e.metaKey){e.preventDefault();setZoom(z=>Math.max(0.3,Math.min(2,z*(e.deltaY<0?1.08:0.93))));}};
+    const onWheel=(e)=>{if(e.ctrlKey||e.metaKey){e.preventDefault();zoomAtRef.current(z=>z*(e.deltaY<0?1.08:0.93));}};
     el.addEventListener("wheel",onWheel,{passive:false}); return()=>el.removeEventListener("wheel",onWheel);
   },[]);
 
@@ -1068,9 +1111,9 @@ const MindmapCanvas = ({ sid }) => {
         <span style={{ fontSize:12,color:"var(--l4)" }}>Glisser · Ctrl+molette pour zoomer</span>
         <div style={{ flex:1 }} />
         <div style={{ display:"flex",alignItems:"center",gap:3 }}>
-          <button onClick={()=>setZoom(z=>Math.max(0.3,z*0.9))} style={{ width:28,height:28,background:"rgba(255,255,255,0.08)",color:"var(--l2)",border:"none",borderRadius:8,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center" }}>{Ic.zoomOut(12)}</button>
-          <button onClick={()=>setZoom(1)} style={{ padding:"0 8px",height:28,background:"rgba(255,255,255,0.08)",color:"var(--l2)",border:"none",borderRadius:8,cursor:"pointer",fontSize:11,minWidth:46 }}>{Math.round(zoom*100)}%</button>
-          <button onClick={()=>setZoom(z=>Math.min(2,z*1.1))} style={{ width:28,height:28,background:"rgba(255,255,255,0.08)",color:"var(--l2)",border:"none",borderRadius:8,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center" }}>{Ic.zoomIn(12)}</button>
+          <button onClick={()=>zoomAt(z=>z*0.9)} style={{ width:28,height:28,background:"rgba(255,255,255,0.08)",color:"var(--l2)",border:"none",borderRadius:8,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center" }}>{Ic.zoomOut(12)}</button>
+          <button onClick={()=>zoomAt(1)} style={{ padding:"0 8px",height:28,background:"rgba(255,255,255,0.08)",color:"var(--l2)",border:"none",borderRadius:8,cursor:"pointer",fontSize:11,minWidth:46 }}>{Math.round(zoom*100)}%</button>
+          <button onClick={()=>zoomAt(z=>z*1.1)} style={{ width:28,height:28,background:"rgba(255,255,255,0.08)",color:"var(--l2)",border:"none",borderRadius:8,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center" }}>{Ic.zoomIn(12)}</button>
         </div>
         <div style={{ width:1,height:18,background:"var(--sep)" }} />
         <button onClick={()=>addCard("image")} style={{ display:"flex",alignItems:"center",gap:6,padding:"6px 12px",background:"rgba(255,255,255,0.08)",color:"var(--l2)",border:"1px solid var(--sep)",borderRadius:10,cursor:"pointer",fontSize:12 }}>{Ic.image(13)} Image</button>
